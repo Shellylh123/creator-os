@@ -43,7 +43,8 @@
 2. Open the **New video** modal briefly — show the two lane cards (**Talking-head** / **Knowledge · B-roll**) — close it
 3. Enter station 04 Edit: show **Start ClipLab preprocessing** and the progress log
 4. Open the review page (localhost:8900) in a new tab: tick off one bad line, double-click to fix a word
-5. Show the final cut playing for a couple of seconds
+5. Back in station 04, scroll to the **Final cut preview** player and play the captioned final cut for 2–3 seconds
+   (Before recording: press "Edit done → Cover" once in station 04 so the final cut gets registered and the player appears)
 
 **What to say:**
 > That Copy Pack is one station on this line: Idea, Script, Shoot, Edit, Cover, Copy, Publish. Two kinds of videos — pure talking-head, or knowledge videos with B-roll.
