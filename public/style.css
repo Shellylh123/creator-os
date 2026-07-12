@@ -161,6 +161,10 @@ iframe.coverlab { width:100%; height:calc(100vh - 210px); border:1px solid var(-
 .fld label { display:block; font-size:11px; font-weight:500; color:var(--ink-3); margin-bottom:4px; letter-spacing:0.2px; }
 .fld textarea { min-height:0; padding:8px 10px; font-size:12.5px; border-radius:9px; }
 
+/* 语言切换 */
+.langswitch { margin:auto 8px 4px; padding:8px 12px; font-size:12.5px; font-weight:500; color:var(--ink-2); cursor:pointer; border-radius:10px; text-align:center; border:1px solid var(--hairline); background:var(--surface); user-select:none; }
+.langswitch:hover { background:#ebebef; }
+
 /* 弹层 */
 .modal-mask { position:fixed; inset:0; background:rgba(29,29,31,.32); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; z-index:100; }
 .modal { background:var(--surface); border-radius:20px; padding:28px 30px; width:440px; max-width:92vw; box-shadow:0 16px 48px rgba(0,0,0,.18); }

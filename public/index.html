@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Creator OS · 一人 MCN</title>
+<title>Creator OS · Your One-Person Media Company</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -23,20 +23,22 @@
   <div class="side">
     <div class="logo">
       <div class="mark"><span class="gem"></span>Creator OS</div>
-      <div class="tagline">一人 MCN · Your One-Person Media Company</div>
+      <div class="tagline">Your One-Person Media Company</div>
     </div>
 
-    <div class="navsec">流水线</div>
+    <div class="navsec">Pipelines</div>
     <div id="projectNav"></div>
-    <div class="nav" onclick="ui.newProject()"><svg class="ic"><use href="#i-plus"/></svg>新建视频</div>
+    <div class="nav" onclick="ui.newProject()"><svg class="ic"><use href="#i-plus"/></svg><span id="navNewLabel">New video</span></div>
 
-    <div class="navsec">工具箱</div>
-    <div class="nav" data-view="tool-script" onclick="ui.show('tool-script')"><svg class="ic"><use href="#i-edit"/></svg>脚本优化</div>
-    <div class="nav" data-view="tool-broll" onclick="ui.show('tool-broll')"><svg class="ic"><use href="#i-film"/></svg>B-roll 策划</div>
-    <div class="nav" data-view="tool-cover" onclick="ui.show('tool-cover')"><svg class="ic"><use href="#i-image"/></svg>封面工厂</div>
-    <div class="nav" data-view="tool-copypack" onclick="ui.show('tool-copypack')"><svg class="ic"><use href="#i-layers"/></svg>文案包</div>
-    <div class="nav" data-view="tool-publish" onclick="ui.show('tool-publish')"><svg class="ic"><use href="#i-send"/></svg>发布台</div>
-    <div class="nav" data-view="tool-insights" onclick="ui.show('tool-insights')"><svg class="ic"><use href="#i-chart"/></svg>数据复盘 <span class="badge dim">roadmap</span></div>
+    <div class="navsec">Toolbox</div>
+    <div class="nav" data-view="tool-script" onclick="ui.show('tool-script')"><svg class="ic"><use href="#i-edit"/></svg><span class="navlabel">Script Studio</span></div>
+    <div class="nav" data-view="tool-broll" onclick="ui.show('tool-broll')"><svg class="ic"><use href="#i-film"/></svg><span class="navlabel">B-roll Planner</span></div>
+    <div class="nav" data-view="tool-cover" onclick="ui.show('tool-cover')"><svg class="ic"><use href="#i-image"/></svg><span class="navlabel">Cover Factory</span></div>
+    <div class="nav" data-view="tool-copypack" onclick="ui.show('tool-copypack')"><svg class="ic"><use href="#i-layers"/></svg><span class="navlabel">Copy Pack</span></div>
+    <div class="nav" data-view="tool-publish" onclick="ui.show('tool-publish')"><svg class="ic"><use href="#i-send"/></svg><span class="navlabel">Publish Desk</span></div>
+    <div class="nav" data-view="tool-insights" onclick="ui.show('tool-insights')"><svg class="ic"><use href="#i-chart"/></svg><span class="navlabel">Insights</span> <span class="badge dim">roadmap</span></div>
+
+    <div class="langswitch" id="langBtn" onclick="toggleLang()">中文</div>
   </div>
 
   <div class="main" id="main"></div>
