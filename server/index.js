@@ -42,13 +42,19 @@ function loadProject(id) {
   const dir = projectDir(id);
   const meta = readJsonIfExists(path.join(dir, "project.json"));
   if (!meta) return null;
+  const footage = readJsonIfExists(path.join(dir, "03_footage.json"));
+  const brollOut = path.join(dir, "final_broll.mp4");
+  const rendered = fs.existsSync(brollOut);
+  // 发布用成片优先级：B-roll 合成片 > ClipLab 剪辑成品 > 原片
+  const bestVideo = rendered ? brollOut : (footage && (footage.final_path || footage.path)) || null;
   return {
     ...meta,
     idea: fs.existsSync(path.join(dir, "01_idea.md")) ? fs.readFileSync(path.join(dir, "01_idea.md"), "utf8") : null,
     script: readJsonIfExists(path.join(dir, "02_script.json")),
-    footage: readJsonIfExists(path.join(dir, "03_footage.json")),
+    footage,
     broll: readJsonIfExists(path.join(dir, "04_broll.json")),
-    rendered: fs.existsSync(path.join(dir, "final_broll.mp4")),
+    rendered,
+    bestVideo,
     dirName: path.basename(dir),
     cover: readJsonIfExists(path.join(dir, "05_cover.json")),
     publish: readJsonIfExists(path.join(dir, "06_publish.json")),
@@ -178,6 +184,31 @@ app.post("/api/cliplab/prep", (req, res) => {
   child.unref();
   res.json({ started: true, pid: child.pid });
 });
+// 找 ClipLab 剪辑成品（3_审核/video_30fps_cut.mp4 或 成品归档），取最新
+app.post("/api/cliplab/final", (req, res) => {
+  const { videoPath } = req.body || {};
+  if (!videoPath) return res.status(400).json({ error: "缺少视频路径" });
+  const base = path.basename(videoPath).replace(/\.[^.]+$/, "");
+  const candidates = [];
+  const outRoot = "/Users/liuhan/Movies/ClipLab/test-0704/output";
+  try {
+    for (const d of fs.readdirSync(outRoot)) {
+      if (!d.includes(base)) continue;
+      const f = path.join(outRoot, d, "剪口播", "3_审核", "video_30fps_cut.mp4");
+      if (fs.existsSync(f)) candidates.push(f);
+    }
+  } catch {}
+  try {
+    const archive = "/Users/liuhan/Movies/ClipLab/成品";
+    for (const f of fs.readdirSync(archive)) {
+      if (f.includes(base) && f.endsWith(".mp4")) candidates.push(path.join(archive, f));
+    }
+  } catch {}
+  if (!candidates.length) return res.json({ found: false });
+  candidates.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+  res.json({ found: true, path: candidates[0] });
+});
+
 app.get("/api/cliplab/log", (_req, res) => {
   try {
     const t = fs.readFileSync(path.join(LOGS, "cliplab_prep.log"), "utf8").split("\n");

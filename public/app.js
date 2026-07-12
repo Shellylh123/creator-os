@@ -240,7 +240,7 @@ function renderEditStation(el, p) {
         <span id="mstatus"></span>
       </div>
       <pre id="cliplabLog" class="t-xs t-faint" style="margin-top:12px;white-space:pre-wrap;max-height:200px;overflow:auto;"></pre>
-      <div class="row"><button class="btn ghost" onclick="ui.openProject('${esc(p.id)}', 4)">剪辑已完成，进入封面 →</button></div></div>`;
+      <div class="row"><button class="btn ghost" onclick="markEditDone('${esc(p.id)}')">剪辑已完成，进入封面 →</button></div></div>`;
     return;
   }
   const transcript = (p.footage || {}).transcript;
@@ -289,6 +289,19 @@ function brollListHtml(b) {
     </div>`;
     })
     .join("");
+}
+
+// 剪辑完成 → 自动找到 ClipLab 成品并登记为"发布用成片"，再进封面
+async function markEditDone(projectId) {
+  const f = (state.currentProject.footage || {});
+  try {
+    const r = await api("/api/cliplab/final", { method: "POST", body: JSON.stringify({ videoPath: f.path }) });
+    if (r.found) {
+      f.final_path = r.path;
+      await api(`/api/projects/${encodeURIComponent(projectId)}/artifact/footage`, { method: "POST", body: JSON.stringify({ content: f }) });
+    }
+  } catch {}
+  ui.openProject(projectId, 4);
 }
 
 async function runCliplabPrep(projectId) {
@@ -383,7 +396,7 @@ function renderCopyStation(el, p) {
 
 // 工位⑦ 发布台
 function renderPublishStation(el, p) {
-  el.innerHTML = publishDeckHtml(p.publish, (p.footage || {}).path);
+  el.innerHTML = publishDeckHtml(p.publish, p.bestVideo || (p.footage || {}).path);
 }
 
 // ---------- 独立工具视图 ----------
