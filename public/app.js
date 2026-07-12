@@ -226,7 +226,7 @@ async function importSrt() {
   try {
     const t = await api("/api/srt2transcript", { method: "POST", body: JSON.stringify({ path: r.path }) });
     $("#transcriptInput").value = t.transcript;
-  } catch (e) { alert(e.message); }
+  } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
 }
 
 // 工位④ 剪辑
@@ -326,7 +326,7 @@ async function runBrollSearch(projectId) {
 async function runBrollRender(projectId) {
   const p = state.currentProject;
   const videoPath = (p.footage || {}).path;
-  if (!videoPath) return alert("③里还没登记成片路径");
+  if (!videoPath) return setStatus('<span class="err">③里还没登记视频文件，先回上一步选择</span>');
   const items = [];
   document.querySelectorAll(".brollpoint").forEach((el) => {
     if (!el.querySelector(".bp-on").checked) return;
@@ -337,7 +337,7 @@ async function runBrollRender(projectId) {
     const c = pt.candidates[Number(selImg.dataset.j)];
     items.push({ point: pt, cand: c, mode: el.querySelector(".bp-mode").value });
   });
-  if (!items.length) return alert("没有勾选任何素材点");
+  if (!items.length) return setStatus('<span class="err">没有勾选任何素材点</span>');
   setStatus('<span class="spinner">下载素材并合成中（约 1-2 分钟）…</span>');
   try {
     const assets = [];
@@ -511,7 +511,7 @@ function setStatus(html) {
 
 async function runScriptModule(projectId) {
   const idea = $("#ideaInput").value.trim();
-  if (!idea) return alert("先输入想法");
+  if (!idea) return setStatus('<span class="err">先输入想法再点优化</span>');
   setStatus('<span class="spinner">脚本 Agent 思考中…</span>');
   try {
     const r = await api("/api/module/script", { method: "POST", body: JSON.stringify({ idea, projectId }) });
@@ -537,7 +537,7 @@ async function saveFootage(projectId) {
 
 async function runBrollModule(projectId) {
   const transcript = projectId ? (state.currentProject.footage || {}).transcript : $("#transcriptInput").value.trim();
-  if (!transcript) return alert("没有转录稿");
+  if (!transcript) return setStatus('<span class="err">没有转录稿——先在③导入 SRT 或粘贴</span>');
   setStatus('<span class="spinner">剪辑 Agent 分析中…</span>');
   try {
     const r = await api("/api/module/broll", { method: "POST", body: JSON.stringify({ transcript, projectId }) });
