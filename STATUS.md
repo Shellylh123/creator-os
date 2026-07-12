@@ -9,13 +9,16 @@
 - 已跑通（真 LLM，走本机 claude CLI）：脚本优化、B-roll 策划、文案包；封面=内嵌已上线的 CoverLab；发布台保底版（复制文案+打开三平台上传页）
 - 设计系统：浅色高级简洁（Lovable/Apple Card 参考），线性图标，紫→暖金渐变点缀
 
-## 在跑的事（多 agent 并行）
+## 在跑的事（多 agent 并行）— 全部交付 ✅
 | 角色 | 任务 | 状态 |
 |---|---|---|
-| broll-builder | 素材检索(Pexels)+ffmpeg 合成模块 server/broll.js | 进行中 |
-| publish-builder | 半自动发布（抖音/视频号自动填充，停在发布按钮前）server/publish.js | 进行中 |
-| pitch-writer | pitch/deck-zh.md + demo-script-zh.md + one-liner.md | 进行中 |
-| 总控(main) | UI/集成/验收/英文化/GitHub | 本文件 |
+| broll-builder | 素材检索(Pexels)+ffmpeg 合成 server/broll.js | ✅ 实测通过 |
+| publish-builder | 半自动发布 server/publish.js（抖音/视频号，停在发布按钮前） | ✅ 视频号全链路实测通过 |
+| pitch-writer | pitch/ 中英文 deck + demo 脚本 + one-liner | ✅ 定稿 |
+| video-analyst | 竞品教程视频拆解 | ✅ 结论入 backlog |
+| 总控(main) | UI 双语化/集成/README/GitHub | ✅ 就绪 |
+
+**待用户**：英文 deck 过目定稿 → 录 demo（纯录屏或出镜）→ 18:00 前提交（GitHub 链接 + demo）
 
 ## 待办（今天）
 - [ ] pitch 中文稿用户确认后翻英文（UI 文案也要英文版）
