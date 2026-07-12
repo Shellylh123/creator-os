@@ -901,5 +901,8 @@ async function runCopypackModule(projectId) {
 (async function init() {
   applySidebarLang();
   await refreshProjects();
-  ui.show("tool-copypack");
+  const q = new URLSearchParams(location.search);
+  const v = q.get("view");
+  if (v && v.startsWith("project:")) return ui.openProject(v.slice(8), q.get("st") !== null && q.get("st") !== undefined ? Number(q.get("st")) : undefined);
+  ui.show(v || "tool-copypack");
 })();
