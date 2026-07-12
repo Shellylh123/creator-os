@@ -1,0 +1,32 @@
+============================================
+PART 1 — 给 MiniMax 的旁白正文（整段复制，别带这行）
+建议音色：沉稳男声或清晰女声，语速 1.0-1.05，美音
+============================================
+
+This is Creator OS — your one-person media company. The whole interface is bilingual: English or Chinese, one toggle.
+
+Let's start with the smallest piece, because every tool works standalone. I paste in a video transcript, hit Generate — and there it is. Rednote title, body and tags. Douyin title. An X post. Thumbnail title candidates. All at once. This used to take me an hour, platform by platform. Now? Ten seconds.
+
+And that was just one station. Here's the full production line: Idea, Script, Shoot, Edit, Cover, Copy, Publish. I speak a rough idea, and the Script Agent turns it into a hook-driven script. I shoot it. The Edit Agent cuts it. Cover, Copy, Publish. Every station works alone, or chained end to end. And every Agent's prompt is tunable — tune it, and it learns your style.
+
+Knowledge videos need visuals. So the Edit Agent reads the transcript, marks exactly where B-roll belongs, and searches real stock footage for every point. But I don't take everything it gives me. This one's off — swap it. This one stays. The Agent does ninety percent of the grunt work. I do the last ten percent: the judgment.
+
+Last stop — the Publish Desk. One click, and an automation browser uploads the video and fills in the title, the body, the tags. Everything. But watch this button. The Publish button is always pressed by a human. The AI gets everything ready — but the one press that sends it into the world, that's a person's call.
+
+That's Creator OS. Humans judge. Agents execute. One person, a crew of Agents, a whole media company.
+
+============================================
+PART 2 — 你录屏时的动作对时表（不要念，照做）
+录屏建议：QuickTime 新建屏幕录制（静音），浏览器全屏，语言切到 EN
+宁可每段多录 2-3 秒，我合成时好裁
+============================================
+
+0:00-0:08  首页停在 Copy Pack 工具页 → 点一下左下角语言切换钮（EN↔中文来回一次，展示双语）
+0:08-0:22  粘贴转录稿（提前复制好）→ 点 Generate multi-platform copy → 等结果出来 → 鼠标扫过四个输出卡片
+0:22-0:45  点侧边栏《Fable5 最后一天》项目 → 鼠标从左到右扫过 7 个工位圆点 → 点开工位② 看脚本对照 → 点工位④
+0:45-1:05  工位④：已有 B-roll 标注和素材缩略图 → 滚动看几个候选 → 取消勾选一个点 → 点另一张缩略图换素材 → 往下滚到合成结果视频，播放 2 秒
+1:05-1:30  点工位⑦ 发布台 → 点视频号的 Auto-fill upload → 切到弹出的自动化浏览器窗口看它自动填 → 填完后鼠标移到"发表"按钮上悬停 3 秒，不点 → （结尾）切回 Creator OS 首页定格
+
+注意：
+- Auto-fill 那段如果等待太久，录屏时可以先录别的，最后单独录这一段（我合成时按旁白时间拼）
+- 转录稿粘贴用这段（提前放剪贴板）：workspace 里 Fable5 项目的 03_footage.json 里有现成的，或者随便一段带 [秒-秒] 格式的文本
