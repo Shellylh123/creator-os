@@ -437,7 +437,8 @@ function publishDeckHtml(pack, videoPath) {
   ${videoPath ? `<div class="card" style="margin-top:16px;"><b style="font-size:13.5px;">成片文件</b>
     <div class="row"><span style="font-size:13px;color:var(--ink-subtle);">${esc(videoPath)}</span>
     <button class="btn sm ghost" onclick="copyText('${esc(videoPath)}', this)">复制路径</button></div></div>` : ""}
-  <div class="steps-note">半自动发布：Agent 备好一切（成片/文案/标签），上传页自动打开——<b>发布按钮永远由你来点</b>。全自动填充（Playwright）接入中。</div>`;
+  <div class="steps-note">半自动发布：Agent 备好一切（成片/文案/标签）——<b>发布按钮永远由你来点</b>。<br>
+  说明：「自动填充上传」用的是独立的自动化浏览器（和你平时的 Chrome 不是同一个），首次使用需在<b>弹出的那个窗口里</b>扫码登录一次，之后不用再扫；「打开上传页」则是在你自己的浏览器里打开，两者登录状态互不相通。自动填充需要成片+文案，请从流水线项目的发布工位使用。</div>`;
 }
 
 // ---------- 半自动发布 ----------

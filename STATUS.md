@@ -17,11 +17,17 @@
 | pitch-writer | pitch/deck-zh.md + demo-script-zh.md + one-liner.md | 进行中 |
 | 总控(main) | UI/集成/验收/英文化/GitHub | 本文件 |
 
-## 待办
-- [ ] 挂载 broll.js / publish.js 路由到 server/index.js（等 agent 交付）
+## 待办（今天）
 - [ ] pitch 中文稿用户确认后翻英文（UI 文案也要英文版）
 - [ ] demo 视频/现场演示准备
 - [ ] 提交：GitHub 链接 + demo
+
+## 赛后 backlog（用户 2026-07-12 验收提出）
+- [ ] 脚本优化质量：派专门 agent 调研"什么样的内容写法带流量"，沉淀为脚本 Agent 的知识库（用户点名重点）
+- [ ] ClipLab 深度集成：审核页/试听页嵌入 Creator OS（今天只做了一键启动预处理+日志）
+- [ ] 文案 Agent 持续调优；X 引流推文效果观察
+- [ ] 小红书自动填充（等 social-auto-upload 上游稳定）
+- [ ] 数据复盘模块 UI 化（cheat-on-content 校准闭环搬进来）
 
 ## 决策记录
 - 2026-07-12 | UI 形态=方案D（工具箱+流水线双模式，模块可单独用） | 用户要求每个模块可单独使用、单独调优
