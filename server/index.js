@@ -7,6 +7,15 @@ const path = require("path");
 const prompts = require("./prompts");
 const { runModule } = require("./llm");
 
+// 轻量 .env 加载（不引依赖）
+const envPath = path.join(__dirname, "..", ".env");
+if (fs.existsSync(envPath)) {
+  for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.+)\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+  }
+}
+
 const app = express();
 const PORT = 3210;
 const WORKSPACE = path.join(__dirname, "..", "workspace");
@@ -14,6 +23,8 @@ fs.mkdirSync(WORKSPACE, { recursive: true });
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(path.join(__dirname, "..", "public")));
+app.use("/api/broll", require("./broll"));
+app.use("/workspace", express.static(WORKSPACE)); // 成片/素材预览
 
 // ---------- 工作区（流水线项目） ----------
 

@@ -185,27 +185,96 @@ function renderEditStation(el, p) {
   }
   const transcript = (p.footage || {}).transcript;
   const b = p.broll;
+  const hasCands = b && (b.points || []).some((pt) => (pt.candidates || []).length);
+  const rendered = b && b.rendered_path;
   el.innerHTML = `<div class="card">
-    <h4 style="margin-bottom:10px;">④ 剪辑 — 知识类 · B-roll 策划 <span class="agentpill">剪辑 Agent</span></h4>
+    <h4 style="margin-bottom:10px;">④ 剪辑 — 知识类 · B-roll <span class="agentpill">剪辑 Agent</span></h4>
     ${transcript ? "" : `<div class="err">还没有转录稿，请先回③登记。</div>`}
     <div class="row" style="margin-top:4px;">
-      <button class="btn" ${transcript ? "" : "disabled"} onclick="runBrollModule('${esc(p.id)}')">标注 B-roll 插入点</button>
+      <button class="btn ${b ? "ghost" : ""}" ${transcript ? "" : "disabled"} onclick="runBrollModule('${esc(p.id)}')">${b ? "重新标注" : "标注 B-roll 插入点"}</button>
+      ${b ? `<button class="btn ${hasCands ? "ghost" : ""}" onclick="runBrollSearch('${esc(p.id)}')">${hasCands ? "重搜素材" : "搜索素材候选"}</button>` : ""}
+      ${hasCands ? `<button class="btn" onclick="runBrollRender('${esc(p.id)}')">下载所选并合成</button>` : ""}
       <span id="mstatus"></span>
     </div>
     <div id="brollList" style="margin-top:16px;">${b ? brollListHtml(b) : ""}</div>
-    ${b ? `<div class="row"><button class="btn" onclick="ui.openProject('${esc(p.id)}', 4)">确认素材点，进入封面 →</button>
-      <span style="font-size:12px;color:var(--ink-subtle);">（素材检索+ffmpeg 合成：接入中，今天演示到策划确认）</span></div>` : ""}
+    <div id="renderOut">${rendered ? renderedHtml(p.id) : ""}</div>
+    ${b ? `<div class="row"><button class="btn ghost" onclick="ui.openProject('${esc(p.id)}', 4)">进入封面 →</button></div>` : ""}
+  </div>`;
+}
+
+function renderedHtml(projectId) {
+  return `<div style="margin-top:18px;">
+    <h4 style="margin-bottom:10px;">合成结果</h4>
+    <video controls style="width:300px;border-radius:14px;background:#000;" src="/workspace/${encodeURIComponent(projectId)}/final_broll.mp4?t=${Date.now()}"></video>
   </div>`;
 }
 
 function brollListHtml(b) {
   return (b.points || [])
-    .map((pt) => `<div class="brollitem"><input type="checkbox" checked>
-      <span class="time">${pt.start}s-${pt.end}s</span>
-      <span class="type">${esc(pt.type)}</span>
-      <span>${esc(pt.desc)}</span>
-      <span class="kw">${esc(pt.search_en)}</span></div>`)
+    .map((pt, i) => {
+      const cands = pt.candidates || [];
+      const defMode = pt.type === "footage" ? "full" : "pip";
+      return `<div class="brollpoint" data-i="${i}">
+      <div class="brollitem"><input type="checkbox" class="bp-on" checked>
+        <span class="time">${pt.start}s-${pt.end}s</span>
+        <span class="type">${esc(pt.type)}</span>
+        <span>${esc(pt.desc)}</span>
+        <span class="kw">${esc(pt.search_en)}</span>
+        ${cands.length ? `<select class="bp-mode">
+          <option value="pip" ${defMode === "pip" ? "selected" : ""}>画中画</option>
+          <option value="full" ${defMode === "full" ? "selected" : ""}>全屏</option>
+        </select>` : ""}
+      </div>
+      ${cands.length ? `<div class="cands">${cands.map((c, j) => `<img class="cand ${j === 0 ? "sel" : ""}" src="${esc(c.thumb_url)}" data-j="${j}" title="${esc(c.source)} · ${c.width}x${c.height}" onclick="selectCand(this)">`).join("")}</div>` : ""}
+    </div>`;
+    })
     .join("");
+}
+
+function selectCand(img) {
+  img.parentElement.querySelectorAll(".cand").forEach((c) => c.classList.remove("sel"));
+  img.classList.add("sel");
+}
+
+async function runBrollSearch(projectId) {
+  const b = state.currentProject.broll;
+  if (!b) return;
+  setStatus('<span class="spinner">正在素材库检索候选…</span>');
+  try {
+    const r = await api("/api/broll/search", { method: "POST", body: JSON.stringify({ points: b.points, projectId }) });
+    state.currentProject.broll = r;
+    renderProject();
+  } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
+}
+
+async function runBrollRender(projectId) {
+  const p = state.currentProject;
+  const videoPath = (p.footage || {}).path;
+  if (!videoPath) return alert("③里还没登记成片路径");
+  const items = [];
+  document.querySelectorAll(".brollpoint").forEach((el) => {
+    if (!el.querySelector(".bp-on").checked) return;
+    const i = Number(el.dataset.i);
+    const pt = p.broll.points[i];
+    const selImg = el.querySelector(".cand.sel");
+    if (!pt || !selImg) return;
+    const c = pt.candidates[Number(selImg.dataset.j)];
+    items.push({ point: pt, cand: c, mode: el.querySelector(".bp-mode").value });
+  });
+  if (!items.length) return alert("没有勾选任何素材点");
+  setStatus('<span class="spinner">下载素材并合成中（约 1-2 分钟）…</span>');
+  try {
+    const assets = [];
+    for (const it of items) {
+      const ext = it.cand.duration ? "mp4" : "jpg";
+      const d = await api("/api/broll/download", { method: "POST", body: JSON.stringify({ url: it.cand.download_url, dest_name: `p${it.point.start}_${it.cand.id}.${ext}`, projectId }) });
+      assets.push({ start: it.point.start, end: it.point.end, assetPath: d.assetPath, mode: it.mode });
+    }
+    await api("/api/broll/render", { method: "POST", body: JSON.stringify({ videoPath, items: assets, projectId }) });
+    state.currentProject.broll.rendered_path = true;
+    setStatus("");
+    renderProject();
+  } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
 }
 
 // 工位⑤ 封面

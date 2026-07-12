@@ -44,8 +44,14 @@ def load_env() -> None:
             os.environ[key] = value
 
 
+# Pexels/Pixabay 走 Cloudflare，默认的 Python-urllib UA 会被按签名拦（403 error 1010）。
+# 必须带一个浏览器 UA 才放行。
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 creator-os-broll/0.1"
+
+
 def http_get_json(url: str, headers: dict | None = None) -> dict:
-    req = urllib.request.Request(url, headers=headers or {})
+    h = {"User-Agent": UA, **(headers or {})}
+    req = urllib.request.Request(url, headers=h)
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 

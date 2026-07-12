@@ -118,6 +118,15 @@ textarea { min-height:110px; }
 .brollitem .type { font-size:10.5px; font-weight:500; background:var(--peach-bg); color:var(--peach); border-radius:9999px; padding:2px 9px; white-space:nowrap; }
 .brollitem .kw { color:var(--ink-3); font-size:12px; margin-left:auto; }
 
+/* B-roll 候选缩略图 */
+.cands { display:flex; gap:8px; margin:6px 0 14px 34px; }
+.cand { width:76px; height:100px; object-fit:cover; border-radius:10px; cursor:pointer; border:2px solid transparent; opacity:.75; transition:all .12s; background:#e8e8ed; }
+.cand:hover { opacity:1; }
+.cand.sel { border-color:var(--lav); opacity:1; box-shadow:0 0 0 3px rgba(124,92,240,.15); }
+.bp-mode { margin-left:auto; font-size:12px; border:1px solid var(--hairline); border-radius:8px; padding:3px 6px; color:var(--ink-2); background:var(--surface); outline:none; font-family:inherit; }
+.brollitem .kw { margin-left:0; }
+.brollpoint .brollitem { margin-bottom:6px; }
+
 /* 发布台 */
 .pubgrid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
 .pubcard { background:var(--surface); border-radius:18px; padding:22px; box-shadow:var(--shadow-sm); }
