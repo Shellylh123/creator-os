@@ -1,8 +1,9 @@
 # Creator OS · 90-Second Live Demo Script (English)
 
-> Goal: in 90 seconds, show "ships in 10 seconds → full pipeline → human-in-the-loop → human presses publish"
+> Goal: in 90 seconds, show "ships in 10 seconds → full pipeline (talking-head editing as the hero) → human-in-the-loop → human presses publish"
 > Principle: less talking, more clicking. Act first, explain second. All Claude-powered.
-> Order: Copy Pack standalone (ships in 10 sec) → pipeline view (walk the flow) → B-roll Planner confirmation → Publish Desk (auto-fill + human presses publish)
+> Order: Copy Pack standalone (ships in 10 sec) → pipeline + talking-head editing (HERO segment: production-proven ClipLab lane, 56s preprocessing / ~10 min hands-on) → brief B-roll showcase (early feature, keep it light) → Publish Desk (auto-fill + human presses publish)
+> Note: B-roll is deliberately de-emphasized — mention two lanes (talking-head / knowledge with B-roll), demo the annotation + composite result briefly, don't dwell.
 > UI button names below match the live interface. The UI is bilingual — a toggle in the bottom-left switches EN / 中文.
 
 ---
@@ -35,32 +36,34 @@
 
 ---
 
-## Segment 2 · The full pipeline (20–45 sec)
+## Segment 2 · Pipeline + talking-head editing — HERO segment (20–55 sec)
 
 **Actions:**
-1. Switch to the **pipeline view** (open a **New video**)
-2. Sweep the mouse left to right across the 7 stations: **Idea → Script → Shoot → Edit → Cover → Copy → Publish**
+1. Open a talking-head pipeline project; sweep the mouse across the 7 stations: **Idea → Script → Shoot → Edit → Cover → Copy → Publish**
+2. Open the **New video** modal briefly — show the two lane cards (**Talking-head** / **Knowledge · B-roll**) — close it
+3. Enter station 04 Edit: show **Start ClipLab preprocessing** and the progress log
+4. Open the review page (localhost:8900) in a new tab: tick off one bad line, double-click to fix a word
+5. Show the final cut playing for a couple of seconds
 
 **What to say:**
-> That Copy Pack is just one station on this line. The full line runs left to right: Idea, Script, Shoot, Edit, Cover, Copy, Publish. You speak an idea, hit **Send to Script Agent**, and it becomes a hook-driven script. You shoot and log it, the Edit station produces the cut, Cover makes the image, Copy produces the three-platform captions, and it all lands on Publish.
-> Every station works alone, or you run the whole thing end to end. And every Agent's prompt is tunable — tune it, and it learns your style.
+> That Copy Pack is one station on this line: Idea, Script, Shoot, Edit, Cover, Copy, Publish. Two kinds of videos — pure talking-head, or knowledge videos with B-roll.
+> Talking-head is the production lane — I run my real account on it. One click: normalize, transcribe, AI sentence-split — fifty-six seconds, unattended. Then I review the transcript like a document: delete a bad take, fix a word, and the final cut renders in one pass, captions burned in. Hands-on time per video: about ten minutes. It used to be hours.
 
-**The key:** get the judges to grasp "modular + chainable + tunable" — don't leave them thinking it's a single-point tool.
+**The key:** this is the production-proven core. Real account, real numbers (56 sec / 10 min). Let it breathe.
 
 ---
 
-## Segment 3 · B-roll Planner confirmation (45–65 sec)
+## Segment 3 · B-roll quick showcase (55–68 sec)
 
 **Actions:**
-1. Open **B-roll Planner** inside the Edit station
-2. Click **Annotate B-roll points**, then **Search stock candidates** — show the footage the AI has already retrieved for each line of the script
-3. Scroll through a few, uncheck one that doesn't fit, swap in another
+1. Switch to the knowledge-type project's Edit station
+2. Show the annotated B-roll points with stock thumbnails; click one candidate to select it
+3. Scroll to **Composite result**, play the composited video 2–3 seconds
 
 **What to say:**
-> Knowledge videos need visuals. B-roll Planner marks the B-roll points for me, then searches stock candidates for every line of the script and lays them out like this. But I don't take it all — I scan it, this one's off, swap it, this one stays.
-> That's our principle: the Agent does the work, the human makes the call. It does 90% of the retrieval grunt work; I do the last 10% of judgment.
+> For knowledge videos there's an early B-roll lane too: the Agent reads the transcript, marks where visuals belong, pulls stock candidates. I pick — it composites. The Agent does the grunt work; I make the calls.
 
-**The key:** this segment is the most direct proof of "human judgment guides AI execution" — dead on theme.
+**The key:** keep it light and honest — it's an early feature. The human-picks-the-Agent-executes beat still lands the theme.
 
 ---
 

@@ -8,7 +8,8 @@ const I18N = {
   en: {
     tagline: "Your One-Person Media Company",
     navPipelines: "Pipelines", navToolbox: "Toolbox", navNew: "New video",
-    navScript: "Script Studio", navBroll: "B-roll Planner", navCover: "Cover Factory",
+    navScript: "Script Studio", navBroll: "Video Editing", navCover: "Cover Factory",
+    laneKoubo: "Talking-head editing", laneBroll: "B-roll planning",
     navCopy: "Copy Pack", navPublish: "Publish Desk", navInsights: "Insights",
     stations: ["Idea", "Script", "Shoot", "Edit", "Cover", "Copy", "Publish"],
     stageReady: "Ready",
@@ -107,7 +108,8 @@ const I18N = {
   zh: {
     tagline: "一人 MCN · Your One-Person Media Company",
     navPipelines: "流水线", navToolbox: "工具箱", navNew: "新建视频",
-    navScript: "脚本优化", navBroll: "B-roll 策划", navCover: "封面工厂",
+    navScript: "脚本优化", navBroll: "视频剪辑", navCover: "封面工厂",
+    laneKoubo: "口播剪辑", laneBroll: "B-roll 策划",
     navCopy: "文案包", navPublish: "发布台", navInsights: "数据复盘",
     stations: ["想法", "脚本", "拍摄", "剪辑", "封面", "文案", "发布"],
     stageReady: "待发布",
@@ -652,13 +654,46 @@ function renderScriptTool() {
     </div>`);
 }
 
+let editLane = "koubo";
+function renderEditToolLane(lane) { editLane = lane; renderBrollTool(); }
+
 function renderBrollTool() {
-  toolShell(T.navBroll, `<span class="tile peach"><svg class="ic"><use href="#i-film"/></svg></span>${T.navBroll}`, "", T.toolBrollDesc, `
+  const koubo = editLane === "koubo";
+  toolShell(T.navBroll, `<span class="tile peach"><svg class="ic"><use href="#i-film"/></svg></span>${T.navBroll}`, "", koubo ? T.cliplabDesc : T.toolBrollDesc, `
     <div class="card">
+      <div class="srcpick" style="margin-bottom:16px;">
+        <div class="${koubo ? "on" : ""}" onclick="renderEditToolLane('koubo')">${T.laneKoubo}</div>
+        <div class="${koubo ? "" : "on"}" onclick="renderEditToolLane('broll')">${T.laneBroll}</div>
+      </div>
+      ${koubo ? `
+      <div class="row" style="margin:0 0 8px;">
+        <input type="text" id="edVideoPath" placeholder="${T.footagePh}" style="flex:1;">
+        <button class="btn sm ghost" onclick="pickFile('edVideoPath', T.pickVideoPrompt)">${T.chooseFile}</button>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="runCliplabPrepPath()">${T.cliplabStart}</button>
+        <button class="btn sm ghost" onclick="refreshCliplabLog()">${T.cliplabRefresh}</button>
+        <span id="mstatus"></span>
+      </div>
+      <pre id="cliplabLog" class="t-xs t-faint" style="margin-top:12px;white-space:pre-wrap;max-height:240px;overflow:auto;"></pre>
+      ` : `
       <textarea id="transcriptInput" style="min-height:150px;" placeholder="${T.transcriptPh}"></textarea>
       <div class="row"><button class="btn" onclick="runBrollModule(null)">${T.annotate}</button><span id="mstatus"></span></div>
       <div id="brollList" style="margin-top:16px;"></div>
+      `}
     </div>`);
+}
+
+// 工具箱版口播剪辑：直接对文件路径启动 ClipLab，不依赖流水线项目
+async function runCliplabPrepPath() {
+  const vp = $("#edVideoPath").value.trim();
+  if (!vp) return setStatus(`<span class="err">${T.footagePh}</span>`);
+  setStatus(`<span class="spinner">${T.cliplabStarting}</span>`);
+  try {
+    await api("/api/cliplab/prep", { method: "POST", body: JSON.stringify({ videoPath: vp }) });
+    setStatus(T.cliplabStarted);
+    refreshCliplabLog();
+  } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
 }
 
 function renderCoverTool() {
