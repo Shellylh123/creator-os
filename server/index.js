@@ -24,6 +24,7 @@ fs.mkdirSync(WORKSPACE, { recursive: true });
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(path.join(__dirname, "..", "public")));
 app.use("/api/broll", require("./broll"));
+app.use("/api/publish", require("./publish"));
 app.use("/workspace", express.static(WORKSPACE)); // 成片/素材预览
 
 // ---------- 工作区（流水线项目） ----------

@@ -14,8 +14,8 @@ async function api(path, opts) {
     headers: { "Content-Type": "application/json" },
     ...opts,
   });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error || "请求失败");
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((data.error || "请求失败") + " [" + r.status + "]");
   return data;
 }
 
@@ -364,28 +364,66 @@ function renderInsights() {
 let lastPack = null; // 最近一次文案包结果（独立工具模式下共享给发布台）
 
 const PLATFORMS = [
-  { key: "xiaohongshu", name: `<span class="pdot" style="background:#ff2442"></span>小红书`, url: "https://creator.xiaohongshu.com/publish/publish", get: (pk) => pk ? `${pk.xiaohongshu.title}\n\n${pk.xiaohongshu.body}\n\n${(pk.xiaohongshu.tags || []).map((t) => "#" + t).join(" ")}` : "" },
-  { key: "douyin", name: `<span class="pdot" style="background:#1d1d1f"></span>抖音`, url: "https://creator.douyin.com/creator-micro/content/upload", get: (pk) => pk ? `${pk.douyin.title}\n${(pk.douyin.tags || []).map((t) => "#" + t).join(" ")}` : "" },
-  { key: "shipinhao", name: `<span class="pdot" style="background:#fa9d3b"></span>视频号`, url: "https://channels.weixin.qq.com/platform/post/create", get: (pk) => pk ? `${pk.douyin.title}` : "" },
+  { key: "xiaohongshu", name: `<span class="pdot" style="background:#ff2442"></span>小红书`, auto: false, url: "https://creator.xiaohongshu.com/publish/publish", get: (pk) => pk ? `${pk.xiaohongshu.title}\n\n${pk.xiaohongshu.body}\n\n${(pk.xiaohongshu.tags || []).map((t) => "#" + t).join(" ")}` : "" },
+  { key: "douyin", name: `<span class="pdot" style="background:#1d1d1f"></span>抖音`, auto: true, url: "https://creator.douyin.com/creator-micro/content/upload", get: (pk) => pk ? `${pk.douyin.title}\n${(pk.douyin.tags || []).map((t) => "#" + t).join(" ")}` : "" },
+  { key: "shipinhao", name: `<span class="pdot" style="background:#fa9d3b"></span>视频号`, auto: true, url: "https://channels.weixin.qq.com/platform/post/create", get: (pk) => pk ? `${pk.douyin.title}` : "" },
 ];
 
 function publishDeckHtml(pack, videoPath) {
+  window._deckCtx = { pack, videoPath };
   return `<div class="pubgrid">
     ${PLATFORMS.map((pl) => {
       const text = pack ? pl.get(pack) : "";
+      const canAuto = pl.auto && pack && videoPath;
       return `<div class="pubcard">
         <h3>${pl.name}</h3>
         <div class="content">${text ? esc(text) : '<span style="color:var(--ink-faint);">（先在文案包工具生成文案）</span>'}</div>
         <div class="row">
           <button class="btn sm ghost" ${text ? "" : "disabled"} onclick="copyText(${JSON.stringify(text).replace(/"/g, "&quot;")}, this)">复制文案</button>
-          <button class="btn sm" onclick="window.open('${pl.url}','_blank')">打开上传页 ↗</button>
-        </div></div>`;
+          ${pl.auto ? `<button class="btn sm" ${canAuto ? "" : "disabled"} title="${canAuto ? "" : "自动填充需要文案+成片路径（走流水线项目）"}" onclick="prefillPublish('${pl.key}')">自动填充上传</button>` : ""}
+          <button class="btn sm ${pl.auto ? "ghost" : ""}" onclick="window.open('${pl.url}','_blank')">打开上传页 ↗</button>
+        </div>
+        <div class="t-xs t-faint" id="pubstatus-${pl.key}" style="margin-top:8px;"></div></div>`;
     }).join("")}
   </div>
   ${videoPath ? `<div class="card" style="margin-top:16px;"><b style="font-size:13.5px;">成片文件</b>
     <div class="row"><span style="font-size:13px;color:var(--ink-subtle);">${esc(videoPath)}</span>
     <button class="btn sm ghost" onclick="copyText('${esc(videoPath)}', this)">复制路径</button></div></div>` : ""}
   <div class="steps-note">半自动发布：Agent 备好一切（成片/文案/标签），上传页自动打开——<b>发布按钮永远由你来点</b>。全自动填充（Playwright）接入中。</div>`;
+}
+
+// ---------- 半自动发布 ----------
+async function prefillPublish(platform) {
+  const ctx = window._deckCtx || {};
+  const pk = ctx.pack;
+  if (!pk || !ctx.videoPath) return;
+  const st = document.getElementById("pubstatus-" + platform);
+  st.textContent = "正在拉起浏览器自动填充…";
+  try {
+    await api("/api/publish/prefill", { method: "POST", body: JSON.stringify({
+      platform,
+      videoPath: ctx.videoPath,
+      title: pk.douyin.title,
+      desc: pk.xiaohongshu.body,
+      tags: pk.douyin.tags || [],
+    }) });
+    st.textContent = "浏览器已拉起：视频与文案自动填充中，填完会停在发布页——请核对后亲手点发布。";
+  } catch (e) {
+    if (/needLogin|409/.test(e.message)) {
+      st.innerHTML = `还没登录过该平台。<a href="#" onclick="loginPublish('${platform}');return false;" style="color:var(--lav);">点这里扫码登录一次</a>`;
+    } else {
+      st.textContent = "失败：" + e.message;
+    }
+  }
+}
+
+async function loginPublish(platform) {
+  const st = document.getElementById("pubstatus-" + platform);
+  st.textContent = "正在拉起登录浏览器，请用手机 App 扫码…";
+  try {
+    await api("/api/publish/login", { method: "POST", body: JSON.stringify({ platform }) });
+    st.textContent = "扫码窗口已打开。扫码成功后回来再点「自动填充上传」。";
+  } catch (e) { st.textContent = "失败：" + e.message; }
 }
 
 // ---------- 模块调用 ----------
