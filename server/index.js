@@ -136,6 +136,55 @@ app.post("/api/module/copypack", (req, res) => {
   moduleHandler(res, prompts.copyPack(script, title), projectId, "06_publish.json");
 });
 
+// ---------- 本地体验增强 ----------
+const { execFile, spawn } = require("child_process");
+
+// 原生文件选择器（本地应用形态的福利：macOS 弹系统选择框，拿到完整路径）
+app.post("/api/pickfile", (req, res) => {
+  const promptText = req.body.prompt || "选择文件";
+  execFile("osascript", ["-e", `POSIX path of (choose file with prompt "${promptText.replace(/"/g, "")}")`],
+    { timeout: 120000 }, (err, stdout) => {
+      if (err) return res.json({ canceled: true });
+      res.json({ path: stdout.trim() });
+    });
+});
+
+// SRT 字幕 → 带时间戳转录稿
+app.post("/api/srt2transcript", (req, res) => {
+  try {
+    const srt = fs.readFileSync(req.body.path, "utf8");
+    const toSec = (t) => { const m = t.match(/(\d+):(\d+):(\d+)[,.](\d+)/); return (+m[1] * 3600 + +m[2] * 60 + +m[3] + +m[4] / 1000).toFixed(1); };
+    const lines = [];
+    for (const b of srt.split(/\r?\n\r?\n+/)) {
+      const ls = b.trim().split(/\r?\n/);
+      if (ls.length < 3 || !ls[1].includes("-->")) continue;
+      const [a, z] = ls[1].split(" --> ");
+      lines.push(`[${toSec(a)}-${toSec(z)}] ${ls.slice(2).join("")}`);
+    }
+    res.json({ transcript: lines.join("\n"), count: lines.length });
+  } catch (e) { res.status(400).json({ error: "读取 SRT 失败: " + e.message }); }
+});
+
+// ClipLab 剪辑引擎：一键启动预处理（归一化+转录+AI断句，5-8 分钟无人值守）
+const CLIPLAB_PREP = "/Users/liuhan/Movies/ClipLab/test-0704/skill_patch/cliplab_prep.sh";
+const LOGS = path.join(__dirname, "..", "logs");
+fs.mkdirSync(LOGS, { recursive: true });
+app.post("/api/cliplab/prep", (req, res) => {
+  const { videoPath } = req.body;
+  if (!videoPath || !fs.existsSync(videoPath)) return res.status(400).json({ error: "视频文件不存在" });
+  if (!fs.existsSync(CLIPLAB_PREP)) return res.status(500).json({ error: "ClipLab 引擎脚本未找到" });
+  const log = fs.openSync(path.join(LOGS, "cliplab_prep.log"), "w");
+  const child = spawn("caffeinate", ["-i", "bash", CLIPLAB_PREP, videoPath], { detached: true, stdio: ["ignore", log, log] });
+  child.unref();
+  res.json({ started: true, pid: child.pid });
+});
+app.get("/api/cliplab/log", (_req, res) => {
+  try {
+    const t = fs.readFileSync(path.join(LOGS, "cliplab_prep.log"), "utf8").split("\n");
+    res.json({ tail: t.slice(-25).join("\n") });
+  } catch { res.json({ tail: "（还没有日志）" }); }
+});
+
 // 模块提示词的读取与保存（"调优此 Agent"）
 const PROMPTS_FILE = path.join(__dirname, "prompts.js");
 app.get("/api/prompts", (_req, res) => {

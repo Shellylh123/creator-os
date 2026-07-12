@@ -128,6 +128,13 @@ function renderProject() {
   const panel = $("#stationPanel");
   const renderers = [renderIdeaStation, renderScriptStation, renderFootageStation, renderEditStation, renderCoverStation, renderCopyStation, renderPublishStation];
   renderers[cur](panel, p);
+
+  const nav = document.createElement("div");
+  nav.className = "row";
+  nav.innerHTML = `${cur > 0 ? `<button class="btn sm ghost" onclick="ui.openProject('${esc(p.id)}', ${cur - 1})">← 上一步</button>` : ""}
+    ${cur < 6 ? `<button class="btn sm ghost" onclick="ui.openProject('${esc(p.id)}', ${cur + 1})">下一步 →</button>` : ""}
+    <span class="t-xs t-faint">工位可任意点选，随时回上一步改；封面与剪辑可并行做</span>`;
+  panel.appendChild(nav);
 }
 
 // 工位① 想法
@@ -164,23 +171,48 @@ function renderScriptStation(el, p) {
 function renderFootageStation(el, p) {
   const f = p.footage || {};
   el.innerHTML = `<div class="card">
-    <h4 style="margin-bottom:10px;">③ 拍摄 & 素材登记 — 拍完把文件路径和转录稿登记进来</h4>
-    <div style="font-size:13px;color:var(--ink-subtle);margin-bottom:10px;">成片/原片路径（本机文件）：</div>
-    <input type="text" id="footagePath" placeholder="/Users/liuhan/Movies/ClipLab/成品/…" value="${esc(f.path || "")}">
-    <div style="font-size:13px;color:var(--ink-subtle);margin:14px 0 10px;">带时间戳转录稿（ClipLab 预处理产物，格式 [开始-结束] 文字）：</div>
-    <textarea id="transcriptInput" style="min-height:140px;" placeholder="[12.4-15.8] 今天是 Fable5 的最后一天…">${esc(f.transcript || "")}</textarea>
+    <h4 style="margin-bottom:10px;">③ 拍摄 & 素材登记</h4>
+    <div class="t-sm t-muted" style="margin-bottom:10px;">拍好的视频文件：</div>
+    <div class="row" style="margin:0 0 8px;">
+      <input type="text" id="footagePath" placeholder="点右边按钮选择视频文件…" value="${esc(f.path || "")}" style="flex:1;">
+      <button class="btn sm ghost" onclick="pickFile('footagePath','选择视频文件')">选择文件</button>
+    </div>
+    <div class="t-sm t-muted" style="margin:14px 0 8px;">转录稿（可选——只有知识类配 B-roll 时需要。有字幕文件就点导入，没有可以先跳过）：</div>
+    <div class="row" style="margin:0 0 8px;">
+      <button class="btn sm ghost" onclick="importSrt()">导入 SRT 字幕文件</button>
+      <span class="t-xs t-faint">用 ClipLab 剪辑会自动产出字幕；外部视频可上传自己的 SRT</span>
+    </div>
+    <textarea id="transcriptInput" style="min-height:120px;" placeholder="[12.4-15.8] 今天是 Fable5 的最后一天…（可留空）">${esc(f.transcript || "")}</textarea>
     <div class="row"><button class="btn" onclick="saveFootage('${esc(p.id)}')">登记完成，进入剪辑 →</button><span id="mstatus"></span></div>
   </div>`;
+}
+
+async function pickFile(inputId, prompt) {
+  const r = await api("/api/pickfile", { method: "POST", body: JSON.stringify({ prompt }) });
+  if (r.path) $("#" + inputId).value = r.path;
+}
+
+async function importSrt() {
+  const r = await api("/api/pickfile", { method: "POST", body: JSON.stringify({ prompt: "选择 SRT 字幕文件" }) });
+  if (!r.path) return;
+  try {
+    const t = await api("/api/srt2transcript", { method: "POST", body: JSON.stringify({ path: r.path }) });
+    $("#transcriptInput").value = t.transcript;
+  } catch (e) { alert(e.message); }
 }
 
 // 工位④ 剪辑
 function renderEditStation(el, p) {
   if (p.type !== "knowledge") {
-    el.innerHTML = `<div class="card"><h4 style="margin-bottom:10px;">④ 剪辑 — 纯口播模式</h4>
-      <div class="out">纯口播剪辑由 <b>ClipLab 管线</b>执行（平滑剪辑 + 3:4 画布 + 字幕烧录 + 变速 + 质检）。<br>
-      在终端对 Claude 说「剪片 ${esc((p.footage || {}).path || "&lt;原片路径&gt;")}」即可，成品自动归档。<br>
-      <span style="color:var(--ink-subtle);">（hackathon 版：ClipLab 为本机已验证管线，此处不重复造轮子）</span></div>
-      <div class="row"><button class="btn" onclick="ui.openProject('${esc(p.id)}', 4)">剪辑已完成，进入封面 →</button></div></div>`;
+    el.innerHTML = `<div class="card"><h4 style="margin-bottom:10px;">④ 剪辑 — 纯口播 <span class="agentpill">ClipLab 引擎</span></h4>
+      <div class="t-sm t-muted" style="margin:4px 0 4px;">一键启动预处理（画面归一化 + 语音转录 + AI 断句，约 5-8 分钟无人值守），完成后日志里会给出审核页地址，勾删改字后一次编码直出成片。</div>
+      <div class="row">
+        <button class="btn" ${(p.footage || {}).path ? "" : "disabled"} onclick="runCliplabPrep('${esc(p.id)}')">启动 ClipLab 预处理</button>
+        <button class="btn sm ghost" onclick="refreshCliplabLog()">刷新进度</button>
+        <span id="mstatus"></span>
+      </div>
+      <pre id="cliplabLog" class="t-xs t-faint" style="margin-top:12px;white-space:pre-wrap;max-height:200px;overflow:auto;"></pre>
+      <div class="row"><button class="btn ghost" onclick="ui.openProject('${esc(p.id)}', 4)">剪辑已完成，进入封面 →</button></div></div>`;
     return;
   }
   const transcript = (p.footage || {}).transcript;
@@ -229,6 +261,22 @@ function brollListHtml(b) {
     </div>`;
     })
     .join("");
+}
+
+async function runCliplabPrep(projectId) {
+  const p = state.currentProject;
+  setStatus('<span class="spinner">正在启动预处理…</span>');
+  try {
+    await api("/api/cliplab/prep", { method: "POST", body: JSON.stringify({ videoPath: (p.footage || {}).path }) });
+    setStatus("已启动（后台运行，防睡眠已开）。点「刷新进度」看日志。");
+    refreshCliplabLog();
+  } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
+}
+
+async function refreshCliplabLog() {
+  const r = await api("/api/cliplab/log");
+  const el = document.getElementById("cliplabLog");
+  if (el) el.textContent = r.tail;
 }
 
 function selectCand(img) {
@@ -298,7 +346,7 @@ function renderCopyStation(el, p) {
       <button class="btn" ${script ? "" : "disabled"} onclick="runCopypackModule('${esc(p.id)}')">生成三平台文案包</button>
       <span id="mstatus"></span>
     </div>
-    <div id="packOut" style="margin-top:6px;">${p.publish ? packHtml(p.publish) : ""}</div>
+    <div id="packOut" style="margin-top:6px;">${p.publish ? packHtml(p.publish, p.id) : ""}</div>
     ${p.publish ? `<div class="row"><button class="btn" onclick="ui.openProject('${esc(p.id)}', 6)">文案 OK，去发布台 →</button></div>` : ""}
   </div>`;
 }
@@ -366,7 +414,7 @@ let lastPack = null; // 最近一次文案包结果（独立工具模式下共�
 const PLATFORMS = [
   { key: "xiaohongshu", name: `<span class="pdot" style="background:#ff2442"></span>小红书`, auto: false, url: "https://creator.xiaohongshu.com/publish/publish", get: (pk) => pk ? `${pk.xiaohongshu.title}\n\n${pk.xiaohongshu.body}\n\n${(pk.xiaohongshu.tags || []).map((t) => "#" + t).join(" ")}` : "" },
   { key: "douyin", name: `<span class="pdot" style="background:#1d1d1f"></span>抖音`, auto: true, url: "https://creator.douyin.com/creator-micro/content/upload", get: (pk) => pk ? `${pk.douyin.title}\n${(pk.douyin.tags || []).map((t) => "#" + t).join(" ")}` : "" },
-  { key: "shipinhao", name: `<span class="pdot" style="background:#fa9d3b"></span>视频号`, auto: true, url: "https://channels.weixin.qq.com/platform/post/create", get: (pk) => pk ? `${pk.douyin.title}` : "" },
+  { key: "shipinhao", name: `<span class="pdot" style="background:#fa9d3b"></span>视频号`, auto: true, url: "https://channels.weixin.qq.com/platform/post/create", get: (pk) => pk ? `${(pk.shipinhao && pk.shipinhao.title) || pk.douyin.title}` : "" },
 ];
 
 function publishDeckHtml(pack, videoPath) {
@@ -470,13 +518,55 @@ async function runBrollModule(projectId) {
   } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
 }
 
-function packHtml(pk) {
-  return `<div class="outgrid">
-    <div class="out"><h4><span class="pdot" style="background:#ff2442;margin-right:6px;"></span>小红书</h4><b>${esc(pk.xiaohongshu.title)}</b>\n${esc(pk.xiaohongshu.body)}\n${(pk.xiaohongshu.tags || []).map((t) => `<span class="tag">#${esc(t)}</span>`).join("")}</div>
-    <div class="out"><h4><span class="pdot" style="background:#1d1d1f;margin-right:6px;"></span>抖音</h4><b>${esc(pk.douyin.title)}</b>\n${(pk.douyin.tags || []).map((t) => `<span class="tag">#${esc(t)}</span>`).join("")}</div>
-    <div class="out"><h4><span class="pdot" style="background:#3579d6;margin-right:6px;"></span>X 推文</h4>${esc(pk.x.post)}\n<span class="t-faint">中文版：</span>${esc(pk.x.thread_zh)}</div>
-    <div class="out"><h4><span class="pdot" style="background:#9d7bf5;margin-right:6px;"></span>封面标题</h4>大标题：<b>${esc(pk.cover.main_title)}</b>\n小标题：${esc(pk.cover.sub_title)}\n备选：${(pk.cover.alt_titles || []).map(esc).join(" / ")}</div>
-  </div>`;
+function packHtml(pk, projectId) {
+  window._packData = pk;
+  window._packProject = projectId || null;
+  const x = pk.x || {};
+  const sp = pk.shipinhao || {};
+  const fld = (label, path, val, rows = 2) =>
+    `<div class="fld"><label>${label}</label><textarea data-f="${path}" rows="${rows}">${esc(val ?? "")}</textarea></div>`;
+  return `<div class="outgrid" id="packForm">
+    <div class="out"><h4><span class="pdot" style="background:#ff2442;margin-right:6px;"></span>小红书</h4>
+      ${fld("标题", "xiaohongshu.title", pk.xiaohongshu.title, 1)}
+      ${fld("正文", "xiaohongshu.body", pk.xiaohongshu.body, 6)}
+      ${fld("标签", "xiaohongshu.tags", (pk.xiaohongshu.tags || []).map((t) => "#" + t).join(" "), 1)}
+    </div>
+    <div class="out"><h4><span class="pdot" style="background:#1d1d1f;margin-right:6px;"></span>抖音 · <span class="pdot" style="background:#fa9d3b;margin:0 6px;"></span>视频号</h4>
+      ${fld("抖音标题", "douyin.title", pk.douyin.title, 1)}
+      ${fld("抖音标签", "douyin.tags", (pk.douyin.tags || []).map((t) => "#" + t).join(" "), 1)}
+      ${fld("视频号标题", "shipinhao.title", sp.title || pk.douyin.title, 1)}
+    </div>
+    <div class="out"><h4><span class="pdot" style="background:#3579d6;margin-right:6px;"></span>X · 引流推文</h4>
+      ${fld("中文", "x.post_zh", x.post_zh || x.thread_zh || "", 3)}
+      ${fld("English", "x.post_en", x.post_en || x.post || "", 3)}
+    </div>
+    <div class="out"><h4><span class="pdot" style="background:#9d7bf5;margin-right:6px;"></span>封面标题</h4>
+      ${fld("大标题", "cover.main_title", pk.cover.main_title, 1)}
+      ${fld("小标题", "cover.sub_title", pk.cover.sub_title, 1)}
+      <div class="t-xs t-faint" style="margin-top:6px;">备选：${(pk.cover.alt_titles || []).map(esc).join(" / ")}</div>
+    </div>
+  </div>
+  <div class="row"><button class="btn sm" onclick="savePack()">保存修改</button><span class="t-xs t-faint" id="packSaveStatus"></span></div>`;
+}
+
+async function savePack() {
+  const pk = window._packData;
+  document.querySelectorAll("#packForm [data-f]").forEach((el) => {
+    const keys = el.dataset.f.split(".");
+    let v = el.value;
+    if (keys[1] === "tags") v = v.split(/[\s,，#]+/).filter(Boolean);
+    let o = pk;
+    for (let i = 0; i < keys.length - 1; i++) { o[keys[i]] = o[keys[i]] || {}; o = o[keys[i]]; }
+    o[keys[keys.length - 1]] = v;
+  });
+  lastPack = pk;
+  if (window._packProject) {
+    await api(`/api/projects/${encodeURIComponent(window._packProject)}/artifact/publish`, { method: "POST", body: JSON.stringify({ content: pk }) });
+    if (state.currentProject) state.currentProject.publish = pk;
+  }
+  const st = document.getElementById("packSaveStatus");
+  st.textContent = "已保存 ✓";
+  setTimeout(() => (st.textContent = ""), 1500);
 }
 
 async function runCopypackModule(projectId) {
@@ -488,7 +578,7 @@ async function runCopypackModule(projectId) {
   try {
     const r = await api("/api/module/copypack", { method: "POST", body: JSON.stringify({ script, title: projectId || "", projectId }) });
     lastPack = r;
-    $("#packOut").innerHTML = packHtml(r);
+    $("#packOut").innerHTML = packHtml(r, projectId);
     setStatus("");
     if (projectId) { state.currentProject.publish = r; renderProject(); }
   } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }

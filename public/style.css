@@ -156,6 +156,11 @@ iframe.coverlab { width:100%; height:calc(100vh - 210px); border:1px solid var(-
 .tile.sky { background:var(--sky-bg); color:var(--sky); }
 .tile.rose { background:var(--rose-bg); color:var(--rose); }
 
+/* 文案包编辑表单 */
+.fld { margin-bottom:10px; }
+.fld label { display:block; font-size:11px; font-weight:500; color:var(--ink-3); margin-bottom:4px; letter-spacing:0.2px; }
+.fld textarea { min-height:0; padding:8px 10px; font-size:12.5px; border-radius:9px; }
+
 /* 文本辅助类 */
 .t-muted { color:var(--ink-2); }
 .t-faint { color:var(--ink-3); }
