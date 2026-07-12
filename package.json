@@ -1,0 +1,13 @@
+{
+  "name": "creator-os",
+  "version": "0.1.0",
+  "description": "Creator OS — Your One-Person Media Company. 一人 MCN 操作系统。",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

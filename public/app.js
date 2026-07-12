@@ -1,0 +1,394 @@
+// Creator OS 前端 — 模块化：每个工具既是流水线工位，也可单独使用。
+const $ = (s) => document.querySelector(s);
+const main = $("#main");
+
+const state = {
+  projects: [],
+  currentProject: null, // 项目对象
+  view: "tool-copypack",
+};
+
+// ---------- 基础 ----------
+async function api(path, opts) {
+  const r = await fetch(path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || "请求失败");
+  return data;
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function copyText(text, el) {
+  navigator.clipboard.writeText(text).then(() => {
+    const old = el.textContent;
+    el.textContent = "已复制 ✓";
+    setTimeout(() => (el.textContent = old), 1200);
+  });
+}
+
+// ---------- 导航 ----------
+async function refreshProjects() {
+  state.projects = await api("/api/projects");
+  const nav = $("#projectNav");
+  nav.innerHTML = state.projects
+    .map((p) => {
+      const st = projectStage(p);
+      return `<div class="nav ${state.view === "project:" + p.id ? "active" : ""}" onclick="ui.openProject('${esc(p.id)}')"><span class="navdot"></span>${esc(p.title)}<span class="badge">${st.label}</span></div>`;
+    })
+    .join("");
+}
+
+function markActiveNav() {
+  document.querySelectorAll(".side .nav").forEach((n) => {
+    n.classList.toggle("active", n.dataset.view === state.view);
+  });
+}
+
+// 项目进行到哪一站
+function projectStage(p) {
+  if (p.publish) return { idx: 6, label: "待发布" };
+  if (p.cover) return { idx: 5, label: "文案" };
+  if (p.broll || (p.footage && p.type === "koubo")) return { idx: 4, label: "封面" };
+  if (p.footage) return { idx: 3, label: "剪辑" };
+  if (p.script) return { idx: 2, label: "拍摄" };
+  if (p.idea) return { idx: 1, label: "脚本" };
+  return { idx: 0, label: "想法" };
+}
+
+// ---------- 视图渲染 ----------
+const ui = {
+  async show(view) {
+    state.view = view;
+    state.currentProject = null;
+    markActiveNav();
+    await refreshProjects();
+    render();
+  },
+
+  async openProject(id, station) {
+    state.currentProject = await api("/api/projects/" + encodeURIComponent(id));
+    state.view = "project:" + id;
+    state.station = station ?? projectStage(state.currentProject).idx;
+    markActiveNav();
+    await refreshProjects();
+    render();
+  },
+
+  async newProject() {
+    const title = prompt("视频标题（工作用名）：");
+    if (!title) return;
+    const type = confirm("这条是【知识类·带B-roll】吗？\n确定=知识类带B-roll　取消=纯口播") ? "knowledge" : "koubo";
+    await api("/api/projects", { method: "POST", body: JSON.stringify({ title, type }) });
+    await this.openProject(title, 0);
+  },
+};
+
+function render() {
+  if (state.view.startsWith("project:")) return renderProject();
+  const map = {
+    "tool-script": renderScriptTool,
+    "tool-broll": renderBrollTool,
+    "tool-cover": renderCoverTool,
+    "tool-copypack": renderCopypackTool,
+    "tool-publish": renderPublishTool,
+    "tool-insights": renderInsights,
+  };
+  (map[state.view] || renderCopypackTool)();
+}
+
+// ---------- 项目（流水线）视图 ----------
+const STATIONS = ["想法", "脚本", "拍摄", "剪辑", "封面", "文案", "发布"];
+
+function renderProject() {
+  const p = state.currentProject;
+  const stage = projectStage(p).idx;
+  const cur = state.station ?? stage;
+  const typeLabel = p.type === "knowledge" ? "知识类 · 带B-roll" : "纯口播";
+
+  main.innerHTML = `
+    <div class="crumb">流水线 / ${esc(p.title)}</div>
+    <h1>${esc(p.title)} <span class="chip">${typeLabel}</span></h1>
+    <div class="desc">产物自动从上一站流到下一站，每站等你确认放行。点工位切换。</div>
+    <div class="card">
+      <div class="line">
+        ${STATIONS.map((s, i) => {
+          const cls = i < stage ? "done" : i === cur ? "current" : "pending";
+          return `<div class="station ${cls}" onclick="ui.openProject('${esc(p.id)}', ${i})">
+            <div class="dot">${i < stage ? "✓" : i + 1}</div><div class="sname">${s}</div></div>`;
+        }).join("")}
+      </div>
+    </div>
+    <div id="stationPanel"></div>`;
+
+  const panel = $("#stationPanel");
+  const renderers = [renderIdeaStation, renderScriptStation, renderFootageStation, renderEditStation, renderCoverStation, renderCopyStation, renderPublishStation];
+  renderers[cur](panel, p);
+}
+
+// 工位① 想法
+function renderIdeaStation(el, p) {
+  el.innerHTML = `<div class="card">
+    <h4 style="margin-bottom:10px;">① 想法输入 — 口述或粘贴你的原始想法</h4>
+    <textarea id="ideaInput" placeholder="语音转文字直接贴进来，有错别字没关系…">${esc(p.idea || "")}</textarea>
+    <div class="row">
+      <button class="btn" onclick="runScriptModule('${esc(p.id)}')">交给脚本 Agent 优化</button>
+      <span id="mstatus"></span>
+    </div></div>`;
+}
+
+// 工位② 脚本
+function renderScriptStation(el, p) {
+  if (!p.script) return renderIdeaStation(el, p);
+  const s = p.script;
+  el.innerHTML = `<div class="card">
+    <h4 style="margin-bottom:12px;">② 脚本优化 — 对照确认，可直接改右栏</h4>
+    <div class="compare">
+      <div><h4>你的口述原稿</h4><div class="out">${esc(p.idea || "（无）")}</div></div>
+      <div><h4>优化稿 · 《${esc(s.title)}》 · 预计 ${esc(s.duration_est)}s</h4>
+        <div class="scriptbox" contenteditable="true" id="scriptEdit">${esc(s.script)}</div>
+        <div class="t-xs t-warn" style="margin-top:8px;">拍摄提示：${esc(s.notes || "")}</div></div>
+    </div>
+    <div class="row">
+      <button class="btn ghost" onclick="runScriptModule('${esc(p.id)}')">↻ 重新生成</button>
+      <button class="btn" onclick="confirmScript('${esc(p.id)}')">确认脚本，进入拍摄 →</button>
+      <span id="mstatus"></span>
+    </div></div>`;
+}
+
+// 工位③ 拍摄/上传
+function renderFootageStation(el, p) {
+  const f = p.footage || {};
+  el.innerHTML = `<div class="card">
+    <h4 style="margin-bottom:10px;">③ 拍摄 & 素材登记 — 拍完把文件路径和转录稿登记进来</h4>
+    <div style="font-size:13px;color:var(--ink-subtle);margin-bottom:10px;">成片/原片路径（本机文件）：</div>
+    <input type="text" id="footagePath" placeholder="/Users/liuhan/Movies/ClipLab/成品/…" value="${esc(f.path || "")}">
+    <div style="font-size:13px;color:var(--ink-subtle);margin:14px 0 10px;">带时间戳转录稿（ClipLab 预处理产物，格式 [开始-结束] 文字）：</div>
+    <textarea id="transcriptInput" style="min-height:140px;" placeholder="[12.4-15.8] 今天是 Fable5 的最后一天…">${esc(f.transcript || "")}</textarea>
+    <div class="row"><button class="btn" onclick="saveFootage('${esc(p.id)}')">登记完成，进入剪辑 →</button><span id="mstatus"></span></div>
+  </div>`;
+}
+
+// 工位④ 剪辑
+function renderEditStation(el, p) {
+  if (p.type !== "knowledge") {
+    el.innerHTML = `<div class="card"><h4 style="margin-bottom:10px;">④ 剪辑 — 纯口播模式</h4>
+      <div class="out">纯口播剪辑由 <b>ClipLab 管线</b>执行（平滑剪辑 + 3:4 画布 + 字幕烧录 + 变速 + 质检）。<br>
+      在终端对 Claude 说「剪片 ${esc((p.footage || {}).path || "&lt;原片路径&gt;")}」即可，成品自动归档。<br>
+      <span style="color:var(--ink-subtle);">（hackathon 版：ClipLab 为本机已验证管线，此处不重复造轮子）</span></div>
+      <div class="row"><button class="btn" onclick="ui.openProject('${esc(p.id)}', 4)">剪辑已完成，进入封面 →</button></div></div>`;
+    return;
+  }
+  const transcript = (p.footage || {}).transcript;
+  const b = p.broll;
+  el.innerHTML = `<div class="card">
+    <h4 style="margin-bottom:10px;">④ 剪辑 — 知识类 · B-roll 策划 <span class="agentpill">剪辑 Agent</span></h4>
+    ${transcript ? "" : `<div class="err">还没有转录稿，请先回③登记。</div>`}
+    <div class="row" style="margin-top:4px;">
+      <button class="btn" ${transcript ? "" : "disabled"} onclick="runBrollModule('${esc(p.id)}')">标注 B-roll 插入点</button>
+      <span id="mstatus"></span>
+    </div>
+    <div id="brollList" style="margin-top:16px;">${b ? brollListHtml(b) : ""}</div>
+    ${b ? `<div class="row"><button class="btn" onclick="ui.openProject('${esc(p.id)}', 4)">确认素材点，进入封面 →</button>
+      <span style="font-size:12px;color:var(--ink-subtle);">（素材检索+ffmpeg 合成：接入中，今天演示到策划确认）</span></div>` : ""}
+  </div>`;
+}
+
+function brollListHtml(b) {
+  return (b.points || [])
+    .map((pt) => `<div class="brollitem"><input type="checkbox" checked>
+      <span class="time">${pt.start}s-${pt.end}s</span>
+      <span class="type">${esc(pt.type)}</span>
+      <span>${esc(pt.desc)}</span>
+      <span class="kw">${esc(pt.search_en)}</span></div>`)
+    .join("");
+}
+
+// 工位⑤ 封面
+function renderCoverStation(el, p) {
+  const cover = (p.publish || {}).cover;
+  el.innerHTML = `<div class="card">
+    <h4 style="margin-bottom:10px;">⑤ 封面 — CoverLab 封面工厂（已上线的自家工具）</h4>
+    ${cover ? `<div class="out" style="margin-bottom:12px;">AI 建议 · 大标题：<b>${esc(cover.main_title)}</b>　小标题：${esc(cover.sub_title)}<br>备选：${(cover.alt_titles || []).map(esc).join(" / ")}</div>` : `<div style="font-size:13px;color:var(--ink-subtle);margin-bottom:12px;">（先跑⑥文案 Agent 可得到封面标题建议）</div>`}
+    <iframe class="coverlab" src="https://cover-factory-web.vercel.app"></iframe>
+    <div class="row"><button class="btn" onclick="ui.openProject('${esc(p.id)}', 5)">封面已出，进入文案 →</button></div>
+  </div>`;
+}
+
+// 工位⑥ 文案
+function renderCopyStation(el, p) {
+  const script = (p.script || {}).script || (p.footage || {}).transcript;
+  el.innerHTML = `<div class="card">
+    <h4 style="margin-bottom:10px;">⑥ 发布文案包 <span class="agentpill">文案 Agent</span></h4>
+    ${script ? "" : `<div class="err">没有脚本或转录稿，请先完成前面步骤。</div>`}
+    <div class="row" style="margin-top:4px;">
+      <button class="btn" ${script ? "" : "disabled"} onclick="runCopypackModule('${esc(p.id)}')">生成三平台文案包</button>
+      <span id="mstatus"></span>
+    </div>
+    <div id="packOut" style="margin-top:6px;">${p.publish ? packHtml(p.publish) : ""}</div>
+    ${p.publish ? `<div class="row"><button class="btn" onclick="ui.openProject('${esc(p.id)}', 6)">文案 OK，去发布台 →</button></div>` : ""}
+  </div>`;
+}
+
+// 工位⑦ 发布台
+function renderPublishStation(el, p) {
+  el.innerHTML = publishDeckHtml(p.publish, (p.footage || {}).path);
+}
+
+// ---------- 独立工具视图 ----------
+function toolShell(crumb, title, chip, desc, inner) {
+  main.innerHTML = `<div class="crumb">工具箱 / ${crumb}</div>
+    <h1>${title} <span class="chip">可独立使用</span>${chip || ""}</h1>
+    <div class="desc">${desc}</div>${inner}`;
+}
+
+function renderScriptTool() {
+  toolShell("脚本优化", `<span class="tile lav"><svg class="ic"><use href="#i-edit"/></svg></span>脚本优化`, "", "口述想法进来，可拍摄的口播稿出去。不需要走完整流水线。", `
+    <div class="card">
+      <textarea id="ideaInput" placeholder="语音转文字直接贴进来，有错别字没关系…"></textarea>
+      <div class="row"><button class="btn" onclick="runScriptModule(null)">优化成口播稿</button><span id="mstatus"></span></div>
+      <div id="scriptOut" style="margin-top:16px;"></div>
+    </div>`);
+}
+
+function renderBrollTool() {
+  toolShell("B-roll 策划", `<span class="tile peach"><svg class="ic"><use href="#i-film"/></svg></span>B-roll 策划`, "", "贴一份带时间戳的转录稿，AI 标出该配画面的位置和搜索词。", `
+    <div class="card">
+      <textarea id="transcriptInput" style="min-height:150px;" placeholder="[12.4-15.8] 今天是 Fable5 的最后一天…"></textarea>
+      <div class="row"><button class="btn" onclick="runBrollModule(null)">标注 B-roll 插入点</button><span id="mstatus"></span></div>
+      <div id="brollList" style="margin-top:16px;"></div>
+    </div>`);
+}
+
+function renderCoverTool() {
+  toolShell("封面工厂", `<span class="tile sky"><svg class="ic"><use href="#i-image"/></svg></span>封面工厂`, "", "自家 CoverLab：真实照片抠图 + 固化模板，秒出 3:4 封面，无 AI 生图成分。", `
+    <iframe class="coverlab" src="https://cover-factory-web.vercel.app"></iframe>`);
+}
+
+function renderCopypackTool() {
+  toolShell("文案包", `<span class="tile mint"><svg class="ic"><use href="#i-layers"/></svg></span>文案包`, "", "给我一份脚本或转录稿，一次出齐三平台发布文案。", `
+    <div class="card">
+      <textarea id="scriptInput" placeholder="粘贴口播稿或转录稿…"></textarea>
+      <div class="row"><button class="btn" onclick="runCopypackModule(null)">生成文案包</button><span id="mstatus"></span></div>
+      <div id="packOut" style="margin-top:6px;"></div>
+    </div>`);
+}
+
+function renderPublishTool() {
+  toolShell("发布台", `<span class="tile rose"><svg class="ic"><use href="#i-send"/></svg></span>发布台`, "", "三平台上传页一键直达，文案一键复制。发布按钮永远由你来点。", publishDeckHtml(lastPack, null));
+}
+
+function renderInsights() {
+  toolShell("数据复盘", `<span class="tile lav"><svg class="ic"><use href="#i-chart"/></svg></span>数据复盘`, `<span class="chip dim">roadmap</span>`, "发布后回收播放/互动数据 → 复盘 → 校准 AI 的选题与打分标准。", `
+    <div class="card"><div class="out">这是 Creator OS 的核心壁垒（已在命令行版跑通，UI 化排期中）：<br><br>
+    01 · 发布前：AI 对每条内容做<b>盲预测</b>（7 维打分，写入不可篡改的预测日志）<br>
+    02 · T+3 天：抓取真实数据，和预测对账<br>
+    03 · 差距写回评分标准 → <b>AI 越用越懂你的账号</b><br><br>
+    每个创作者的校准数据是自己独有的资产 —— 这就是"模板任何人可用，但每个人的 Creator OS 独一无二"的原因。</div></div>`);
+}
+
+// ---------- 发布台 ----------
+let lastPack = null; // 最近一次文案包结果（独立工具模式下共享给发布台）
+
+const PLATFORMS = [
+  { key: "xiaohongshu", name: `<span class="pdot" style="background:#ff2442"></span>小红书`, url: "https://creator.xiaohongshu.com/publish/publish", get: (pk) => pk ? `${pk.xiaohongshu.title}\n\n${pk.xiaohongshu.body}\n\n${(pk.xiaohongshu.tags || []).map((t) => "#" + t).join(" ")}` : "" },
+  { key: "douyin", name: `<span class="pdot" style="background:#1d1d1f"></span>抖音`, url: "https://creator.douyin.com/creator-micro/content/upload", get: (pk) => pk ? `${pk.douyin.title}\n${(pk.douyin.tags || []).map((t) => "#" + t).join(" ")}` : "" },
+  { key: "shipinhao", name: `<span class="pdot" style="background:#fa9d3b"></span>视频号`, url: "https://channels.weixin.qq.com/platform/post/create", get: (pk) => pk ? `${pk.douyin.title}` : "" },
+];
+
+function publishDeckHtml(pack, videoPath) {
+  return `<div class="pubgrid">
+    ${PLATFORMS.map((pl) => {
+      const text = pack ? pl.get(pack) : "";
+      return `<div class="pubcard">
+        <h3>${pl.name}</h3>
+        <div class="content">${text ? esc(text) : '<span style="color:var(--ink-faint);">（先在文案包工具生成文案）</span>'}</div>
+        <div class="row">
+          <button class="btn sm ghost" ${text ? "" : "disabled"} onclick="copyText(${JSON.stringify(text).replace(/"/g, "&quot;")}, this)">复制文案</button>
+          <button class="btn sm" onclick="window.open('${pl.url}','_blank')">打开上传页 ↗</button>
+        </div></div>`;
+    }).join("")}
+  </div>
+  ${videoPath ? `<div class="card" style="margin-top:16px;"><b style="font-size:13.5px;">成片文件</b>
+    <div class="row"><span style="font-size:13px;color:var(--ink-subtle);">${esc(videoPath)}</span>
+    <button class="btn sm ghost" onclick="copyText('${esc(videoPath)}', this)">复制路径</button></div></div>` : ""}
+  <div class="steps-note">半自动发布：Agent 备好一切（成片/文案/标签），上传页自动打开——<b>发布按钮永远由你来点</b>。全自动填充（Playwright）接入中。</div>`;
+}
+
+// ---------- 模块调用 ----------
+function setStatus(html) {
+  const el = $("#mstatus");
+  if (el) el.innerHTML = html;
+}
+
+async function runScriptModule(projectId) {
+  const idea = $("#ideaInput").value.trim();
+  if (!idea) return alert("先输入想法");
+  setStatus('<span class="spinner">脚本 Agent 思考中…</span>');
+  try {
+    const r = await api("/api/module/script", { method: "POST", body: JSON.stringify({ idea, projectId }) });
+    if (projectId) return ui.openProject(projectId, 1);
+    $("#scriptOut").innerHTML = `<div class="scriptbox"><b>《${esc(r.title)}》</b> · 预计 ${esc(r.duration_est)}s\n\n${esc(r.script)}\n\n拍摄提示：${esc(r.notes || "")}</div>`;
+    setStatus("");
+  } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
+}
+
+async function confirmScript(projectId) {
+  const edited = $("#scriptEdit").innerText;
+  const p = state.currentProject;
+  const updated = { ...p.script, script: edited };
+  await api(`/api/projects/${encodeURIComponent(projectId)}/artifact/script`, { method: "POST", body: JSON.stringify({ content: updated }) });
+  ui.openProject(projectId, 2);
+}
+
+async function saveFootage(projectId) {
+  const content = { path: $("#footagePath").value.trim(), transcript: $("#transcriptInput").value.trim() };
+  await api(`/api/projects/${encodeURIComponent(projectId)}/artifact/footage`, { method: "POST", body: JSON.stringify({ content }) });
+  ui.openProject(projectId, 3);
+}
+
+async function runBrollModule(projectId) {
+  const transcript = projectId ? (state.currentProject.footage || {}).transcript : $("#transcriptInput").value.trim();
+  if (!transcript) return alert("没有转录稿");
+  setStatus('<span class="spinner">剪辑 Agent 分析中…</span>');
+  try {
+    const r = await api("/api/module/broll", { method: "POST", body: JSON.stringify({ transcript, projectId }) });
+    $("#brollList").innerHTML = brollListHtml(r);
+    setStatus("");
+    if (projectId) state.currentProject.broll = r;
+  } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
+}
+
+function packHtml(pk) {
+  return `<div class="outgrid">
+    <div class="out"><h4><span class="pdot" style="background:#ff2442;margin-right:6px;"></span>小红书</h4><b>${esc(pk.xiaohongshu.title)}</b>\n${esc(pk.xiaohongshu.body)}\n${(pk.xiaohongshu.tags || []).map((t) => `<span class="tag">#${esc(t)}</span>`).join("")}</div>
+    <div class="out"><h4><span class="pdot" style="background:#1d1d1f;margin-right:6px;"></span>抖音</h4><b>${esc(pk.douyin.title)}</b>\n${(pk.douyin.tags || []).map((t) => `<span class="tag">#${esc(t)}</span>`).join("")}</div>
+    <div class="out"><h4><span class="pdot" style="background:#3579d6;margin-right:6px;"></span>X 推文</h4>${esc(pk.x.post)}\n<span class="t-faint">中文版：</span>${esc(pk.x.thread_zh)}</div>
+    <div class="out"><h4><span class="pdot" style="background:#9d7bf5;margin-right:6px;"></span>封面标题</h4>大标题：<b>${esc(pk.cover.main_title)}</b>\n小标题：${esc(pk.cover.sub_title)}\n备选：${(pk.cover.alt_titles || []).map(esc).join(" / ")}</div>
+  </div>`;
+}
+
+async function runCopypackModule(projectId) {
+  const script = projectId
+    ? ((state.currentProject.script || {}).script || (state.currentProject.footage || {}).transcript)
+    : $("#scriptInput").value.trim();
+  if (!script) return alert("没有脚本内容");
+  setStatus('<span class="spinner">文案 Agent 写作中…</span>');
+  try {
+    const r = await api("/api/module/copypack", { method: "POST", body: JSON.stringify({ script, title: projectId || "", projectId }) });
+    lastPack = r;
+    $("#packOut").innerHTML = packHtml(r);
+    setStatus("");
+    if (projectId) { state.currentProject.publish = r; renderProject(); }
+  } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
+}
+
+// ---------- 启动 ----------
+(async function init() {
+  await refreshProjects();
+  ui.show("tool-copypack");
+})();

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案C · 对话式 MCN 经理</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif; background:#0f1117; color:#e5e7eb; height:100vh; display:flex; flex-direction:column; }
+  .topbar { padding:14px 24px; border-bottom:1px solid #1f2330; display:flex; align-items:center; }
+  .logo { font-weight:800; font-size:17px; color:#fff; }
+  .logo span { color:#a78bfa; }
+  .topbar .sub { margin-left:14px; color:#6b7280; font-size:13px; }
+  .cols { flex:1; display:flex; min-height:0; }
+  .chat { flex:1.1; display:flex; flex-direction:column; border-right:1px solid #1f2330; }
+  .msgs { flex:1; overflow:auto; padding:22px 26px; }
+  .msg { max-width:82%; margin-bottom:16px; font-size:14px; line-height:1.7; }
+  .msg .who { font-size:11px; color:#6b7280; margin-bottom:4px; }
+  .msg .bubble { padding:10px 14px; border-radius:12px; }
+  .me { margin-left:auto; }
+  .me .bubble { background:#7c5cf0; color:#fff; border-bottom-right-radius:4px; }
+  .ai .bubble { background:#1a1e2a; border:1px solid #262b3a; border-bottom-left-radius:4px; }
+  .ai .act { display:inline-block; font-size:12px; color:#f59e0b; background:#f59e0b18; border:1px solid #f59e0b40; border-radius:20px; padding:2px 10px; margin-top:8px; }
+  .input { padding:14px 20px; border-top:1px solid #1f2330; display:flex; gap:10px; }
+  .input input { flex:1; background:#1a1e2a; border:1px solid #262b3a; border-radius:10px; padding:11px 14px; color:#e5e7eb; font-size:14px; outline:none; }
+  .input button { background:#7c5cf0; color:#fff; border:none; border-radius:10px; padding:0 18px; font-weight:600; cursor:pointer; }
+  .artifacts { flex:1; padding:20px 22px; overflow:auto; background:#0c0e13; }
+  .artifacts h3 { font-size:12px; color:#6b7280; letter-spacing:1px; margin-bottom:14px; font-weight:600; }
+  .art { background:#141824; border:1px solid #222738; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+  .art .t { font-size:13.5px; font-weight:700; color:#fff; display:flex; align-items:center; }
+  .art .t .st { margin-left:auto; font-size:11px; font-weight:600; }
+  .ok { color:#34d399; } .run { color:#f59e0b; animation:blink 1.2s infinite; } .wait { color:#4b5563; }
+  @keyframes blink { 50%{opacity:.4;} }
+  .art .body { margin-top:8px; font-size:12.5px; color:#9ca3af; line-height:1.7; }
+  .thumb { display:flex; gap:8px; margin-top:10px; }
+  .thumb div { width:64px; height:85px; border-radius:8px; background:linear-gradient(160deg,#2a2f45,#1a1e2e); border:1px solid #2e3448; display:flex; align-items:center; justify-content:center; font-size:10px; color:#6b7280; }
+  .thumb div.sel { border-color:#a78bfa; color:#a78bfa; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">Creator <span>OS</span></div>
+    <div class="sub">你的 MCN 经理 · 在线</div>
+  </div>
+  <div class="cols">
+    <div class="chat">
+      <div class="msgs">
+        <div class="msg me"><div class="who">你</div><div class="bubble">我想做一条讲 Fable5 退役的视频，知识类的，帮我配点画面</div></div>
+        <div class="msg ai"><div class="who">MCN 经理</div><div class="bubble">收到。脚本 Agent 已出第一版口播稿（右侧可看）。钩子我用了"今天之后，最强模型下线"，你看行不行。<br><span class="act">⚙️ 剪辑 Agent 正在标 B-roll…</span></div></div>
+        <div class="msg ai"><div class="who">MCN 经理</div><div class="bubble">B-roll 标好了 4 处：官网截图 / 工作流录屏 / 耗时对比图表 / 成片画面。第 3 处我不太确定，你过目一下？</div></div>
+        <div class="msg me"><div class="who">你</div><div class="bubble">第 3 个换成我的封面工厂界面录屏</div></div>
+        <div class="msg ai"><div class="who">MCN 经理</div><div class="bubble">已替换，正在重新合成。封面 Agent 同时出了 3 个候选（右侧），我推荐第 2 个，大字更抓眼。</div></div>
+      </div>
+      <div class="input"><input placeholder="对你的 MCN 经理说…"><button>发送</button></div>
+    </div>
+    <div class="artifacts">
+      <h3>产物面板 · 《Fable5 最后一天》</h3>
+      <div class="art"><div class="t">📝 口播稿 v2 <span class="st ok">已确认</span></div><div class="body">"今天之后，这个最强模型就要下线了…" 约 95 秒 · 14 句</div></div>
+      <div class="art"><div class="t">🎬 剪辑 + B-roll <span class="st run">合成中…</span></div><div class="body">4 处素材：官网截图 · 工作流录屏 · <b style="color:#a78bfa">封面工厂录屏(已替换)</b> · 对比图表</div></div>
+      <div class="art"><div class="t">🖼 封面 <span class="st ok">3 候选</span></div><div class="thumb"><div>候选1</div><div class="sel">候选2 ★</div><div>候选3</div></div></div>
+      <div class="art"><div class="t">📦 发布文案包 <span class="st wait">等待成片</span></div><div class="body">小红书 · 抖音 · X</div></div>
+    </div>
+  </div>
+</body>
+</html>

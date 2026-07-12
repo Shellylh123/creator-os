@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案A · 内容工厂工作台</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif; background:#f4f5f7; color:#1a1d24; }
+  .topbar { background:#12141a; color:#fff; padding:14px 28px; display:flex; align-items:center; gap:14px; }
+  .logo { font-weight:800; font-size:18px; letter-spacing:.5px; }
+  .logo span { color:#8b7cf6; }
+  .topbar .sub { color:#8a8f9c; font-size:13px; }
+  .topbar .btn-new { margin-left:auto; background:#8b7cf6; color:#fff; border:none; padding:9px 18px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+  .wrap { max-width:1080px; margin:28px auto; padding:0 24px; }
+  h2 { font-size:15px; color:#6b7280; font-weight:600; margin-bottom:14px; }
+  .card { background:#fff; border-radius:14px; padding:20px 24px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); border:1px solid #ebedf0; }
+  .card-head { display:flex; align-items:center; margin-bottom:18px; }
+  .vtitle { font-size:16px; font-weight:700; }
+  .vtype { margin-left:10px; font-size:12px; padding:3px 10px; border-radius:20px; background:#eef2ff; color:#6366f1; font-weight:600; }
+  .vtype.knowledge { background:#ecfdf5; color:#059669; }
+  .vmeta { margin-left:auto; font-size:12px; color:#9ca3af; }
+  .line { display:flex; align-items:flex-start; }
+  .station { flex:1; text-align:center; position:relative; cursor:pointer; padding:6px 2px; border-radius:10px; transition:background .15s; }
+  .station:hover { background:#f7f7fb; }
+  .station:not(:last-child)::after { content:""; position:absolute; top:20px; right:-50%; width:100%; height:2px; background:#e5e7eb; z-index:0; }
+  .station.done:not(:last-child)::after { background:#c7d2fe; }
+  .dot { width:40px; height:40px; border-radius:50%; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-size:17px; position:relative; z-index:1; background:#fff; border:2px solid #e5e7eb; color:#c3c7cf; }
+  .done .dot { background:#8b7cf6; border-color:#8b7cf6; color:#fff; }
+  .working .dot { background:#fff7ed; border-color:#f59e0b; animation:pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.35);} 50%{box-shadow:0 0 0 9px rgba(245,158,11,0);} }
+  .sname { font-size:12.5px; font-weight:600; color:#4b5563; }
+  .sagent { font-size:11px; color:#b45309; margin-top:3px; }
+  .done .sname { color:#1f2937; }
+  .pending .sname { color:#b8bcc4; }
+  .panel { margin-top:18px; border-top:1px dashed #e5e7eb; padding-top:18px; display:flex; gap:16px; }
+  .panel .col { flex:1; background:#fafafa; border:1px solid #eef0f3; border-radius:10px; padding:14px; font-size:12.5px; color:#4b5563; }
+  .panel .col h4 { font-size:12px; color:#9ca3af; font-weight:600; margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px;}
+  .brollitem { background:#fff; border:1px solid #e8eaee; border-radius:8px; padding:8px 10px; margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+  .brollitem .t { color:#6366f1; font-weight:700; font-size:11px; white-space:nowrap; }
+  .tune { font-size:12px; color:#8b7cf6; cursor:pointer; margin-top:8px; display:inline-block; }
+  .approve { display:flex; gap:10px; margin-top:12px; }
+  .approve button { border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; }
+  .approve .ok { background:#8b7cf6; color:#fff; }
+  .approve .redo { background:#f3f4f6; color:#4b5563; }
+  .hint { text-align:center; color:#9ca3af; font-size:12.5px; margin-top:20px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">Creator <span>OS</span></div>
+    <div class="sub">一人 MCN 操作系统 · Your One-Person Media Company</div>
+    <button class="btn-new">＋ 新建视频</button>
+  </div>
+  <div class="wrap">
+    <h2>我的内容工厂 · 2 条视频在产线上</h2>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="vtitle">《Fable5 最后一天》</div>
+        <div class="vtype knowledge">知识类 · 带B-roll</div>
+        <div class="vmeta">创建于今天 11:32</div>
+      </div>
+      <div class="line">
+        <div class="station done"><div class="dot">✓</div><div class="sname">想法</div></div>
+        <div class="station done"><div class="dot">✓</div><div class="sname">脚本</div></div>
+        <div class="station done"><div class="dot">✓</div><div class="sname">拍摄</div></div>
+        <div class="station working"><div class="dot">⚙️</div><div class="sname">剪辑</div><div class="sagent">剪辑Agent · 标B-roll中</div></div>
+        <div class="station pending"><div class="dot">5</div><div class="sname">封面</div></div>
+        <div class="station pending"><div class="dot">6</div><div class="sname">文案</div></div>
+        <div class="station pending"><div class="dot">7</div><div class="sname">发布</div></div>
+      </div>
+      <!-- 点开工位后展开的模块面板（示意） -->
+      <div class="panel">
+        <div class="col">
+          <h4>输入 · 转录稿（已就绪）</h4>
+          [12.4-15.8] 今天是 Fable5 的最后一天<br>
+          [15.9-19.2] 它是我用过最强的模型<br>
+          [19.3-24.0] 我拿它跑了一整套自动化…
+        </div>
+        <div class="col">
+          <h4>剪辑Agent 提议 · 4 处 B-roll（等你确认）</h4>
+          <div class="brollitem"><input type="checkbox" checked><span class="t">15.9s 截图</span>Claude 官网模型页</div>
+          <div class="brollitem"><input type="checkbox" checked><span class="t">24.1s 录屏</span>工作流运行画面</div>
+          <div class="brollitem"><input type="checkbox"><span class="t">38.0s 图表</span>耗时对比卡片</div>
+          <div class="tune">▸ 调优此 Agent（编辑提示词/参数）</div>
+          <div class="approve"><button class="ok">确认 3 处，开始合成</button><button class="redo">重新提议</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="vtitle">《AI 时代怎么找工作》</div>
+        <div class="vtype">纯口播</div>
+        <div class="vmeta">创建于今天 13:05</div>
+      </div>
+      <div class="line">
+        <div class="station done"><div class="dot">✓</div><div class="sname">想法</div></div>
+        <div class="station working"><div class="dot">⚙️</div><div class="sname">脚本</div><div class="sagent">脚本Agent · 优化中</div></div>
+        <div class="station pending"><div class="dot">3</div><div class="sname">拍摄</div></div>
+        <div class="station pending"><div class="dot">4</div><div class="sname">剪辑</div></div>
+        <div class="station pending"><div class="dot">5</div><div class="sname">封面</div></div>
+        <div class="station pending"><div class="dot">6</div><div class="sname">文案</div></div>
+        <div class="station pending"><div class="dot">7</div><div class="sname">发布</div></div>
+      </div>
+    </div>
+
+    <div class="hint">点击任意工位 → 展开该模块的面板（输入预览 → Agent 运行/调优 → 人工确认放行）</div>
+  </div>
+</body>
+</html>

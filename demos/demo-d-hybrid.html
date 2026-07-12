@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案D · 工具箱 + 流水线 双模式</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif; background:#f4f5f7; color:#1a1d24; display:flex; height:100vh; }
+  /* 左侧导航 */
+  .side { width:220px; background:#12141a; color:#c9ccd4; display:flex; flex-direction:column; padding:18px 0; }
+  .logo { font-weight:800; font-size:17px; color:#fff; padding:0 20px 18px; }
+  .logo span { color:#8b7cf6; }
+  .navsec { font-size:11px; color:#5b606c; letter-spacing:1px; padding:14px 20px 6px; font-weight:600; }
+  .nav { padding:8px 20px; font-size:13.5px; cursor:pointer; display:flex; align-items:center; gap:9px; border-left:3px solid transparent; }
+  .nav:hover { background:#1a1d26; }
+  .nav.active { background:#1e2130; color:#fff; border-left-color:#8b7cf6; }
+  .nav .badge { margin-left:auto; font-size:10px; background:#f59e0b22; color:#f59e0b; padding:1px 7px; border-radius:10px; }
+  /* 主区 */
+  .main { flex:1; overflow:auto; padding:26px 34px; }
+  .crumb { font-size:12.5px; color:#9ca3af; margin-bottom:6px; }
+  h1 { font-size:20px; margin-bottom:4px; }
+  .desc { color:#6b7280; font-size:13.5px; margin-bottom:20px; }
+  .modecard { background:#fff; border:1px solid #ebedf0; border-radius:14px; padding:22px 26px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .srcpick { display:flex; gap:10px; margin-bottom:16px; }
+  .srcpick div { font-size:12.5px; padding:7px 14px; border-radius:20px; border:1px solid #e5e7eb; color:#6b7280; cursor:pointer; }
+  .srcpick div.on { background:#ede9fe; border-color:#c4b5fd; color:#6d28d9; font-weight:600; }
+  textarea { width:100%; height:110px; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13.5px; font-family:inherit; color:#374151; resize:none; }
+  .runbtn { margin-top:14px; background:#8b7cf6; color:#fff; border:none; border-radius:10px; padding:11px 24px; font-size:14px; font-weight:600; cursor:pointer; }
+  .tune { font-size:12.5px; color:#8b7cf6; margin-left:14px; cursor:pointer; }
+  .outgrid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; }
+  .out { background:#fafafa; border:1px solid #eef0f3; border-radius:10px; padding:14px 16px; font-size:12.5px; color:#4b5563; line-height:1.8; }
+  .out h4 { font-size:12px; margin-bottom:8px; color:#1f2937; display:flex; align-items:center; }
+  .out .copy { margin-left:auto; font-size:11px; color:#8b7cf6; cursor:pointer; font-weight:600; }
+  .tag { display:inline-block; background:#eef2ff; color:#6366f1; border-radius:5px; padding:1px 8px; font-size:11px; margin:2px 3px 0 0; }
+  /* 流水线模式预览 */
+  .flowcard { background:#fff; border:1px solid #ebedf0; border-radius:14px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .flowhead { display:flex; align-items:center; margin-bottom:16px; }
+  .vtitle { font-weight:700; font-size:15px; }
+  .vtype { margin-left:10px; font-size:11px; padding:2px 9px; border-radius:20px; background:#ecfdf5; color:#059669; font-weight:600; }
+  .line { display:flex; }
+  .station { flex:1; text-align:center; position:relative; padding:4px 2px; cursor:pointer; }
+  .station:not(:last-child)::after { content:""; position:absolute; top:17px; right:-50%; width:100%; height:2px; background:#e5e7eb; }
+  .station.done:not(:last-child)::after { background:#c7d2fe; }
+  .dot { width:34px; height:34px; border-radius:50%; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; font-size:14px; position:relative; z-index:1; background:#fff; border:2px solid #e5e7eb; color:#c3c7cf; }
+  .done .dot { background:#8b7cf6; border-color:#8b7cf6; color:#fff; }
+  .working .dot { border-color:#f59e0b; background:#fff7ed; animation:pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.3);} 50%{box-shadow:0 0 0 8px rgba(245,158,11,0);} }
+  .sname { font-size:12px; font-weight:600; color:#4b5563; }
+  .pending .sname { color:#b8bcc4; }
+  .note { margin-top:14px; font-size:12px; color:#9ca3af; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+  <div class="side">
+    <div class="logo">Creator <span>OS</span></div>
+
+    <div class="navsec">流水线 · 我的视频</div>
+    <div class="nav" onclick="show('flow')" id="nav-flow">🏭 《Fable5 最后一天》<span class="badge">剪辑中</span></div>
+    <div class="nav">＋ 新建视频（走全流程）</div>
+
+    <div class="navsec">工具箱 · 单独使用</div>
+    <div class="nav">📝 脚本优化</div>
+    <div class="nav">🎬 智能剪辑（口播/知识类）</div>
+    <div class="nav">🖼 封面工厂</div>
+    <div class="nav active" onclick="show('tool')" id="nav-tool">📦 文案包</div>
+    <div class="nav">📊 数据复盘 <span class="badge" style="background:#37415122;color:#6b7280;">roadmap</span></div>
+  </div>
+
+  <div class="main">
+    <!-- 单独工具模式 -->
+    <div id="tool">
+      <div class="crumb">工具箱 / 文案包</div>
+      <h1>📦 文案包 <span style="font-size:12px;color:#059669;font-weight:600;">可独立使用</span></h1>
+      <div class="desc">给我一份脚本或视频转录稿，一次出齐三平台发布文案。不需要走完整流水线。</div>
+      <div class="modecard">
+        <div class="srcpick">
+          <div class="on">直接粘贴脚本/转录稿</div>
+          <div>从流水线项目导入 ▾</div>
+          <div>上传 SRT 字幕</div>
+        </div>
+        <textarea>今天之后，这个最强模型就要下线了。我花一周时间，用它搭了一套内容自动化流水线…</textarea>
+        <button class="runbtn">✨ 生成文案包</button><span class="tune">🎛 调优此 Agent</span>
+        <div class="outgrid">
+          <div class="out"><h4>📕 小红书 <span class="copy">复制</span></h4>标题：AI下班前，我让它替我打了份工 🤖<br>正文：今天是这个模型的最后一天…（150字）<br><span class="tag">#AI工具</span><span class="tag">#效率</span><span class="tag">#一人公司</span></div>
+          <div class="out"><h4>🎵 抖音 <span class="copy">复制</span></h4>标题：最强AI下线前24小时，我干了这件事</div>
+          <div class="out"><h4>𝕏 推文 <span class="copy">复制</span></h4>Spent the last day of the strongest model automating my entire content pipeline…</div>
+          <div class="out"><h4>🖼 封面标题 <span class="copy">复制</span></h4>大标题：最后一天<br>小标题：我把它榨干了 → <span style="color:#8b7cf6;cursor:pointer;">一键送去封面工厂</span></div>
+        </div>
+      </div>
+      <div class="note">💡 同一个工具，在流水线里会被自动调用（输入来自上一步产物）；单独用时你直接给输入。</div>
+    </div>
+
+    <!-- 流水线模式 -->
+    <div id="flow" class="hidden">
+      <div class="crumb">流水线 / 《Fable5 最后一天》</div>
+      <h1>🏭 《Fable5 最后一天》</h1>
+      <div class="desc">全流程模式：产物自动从上一站流到下一站，每站等你确认放行。</div>
+      <div class="flowcard">
+        <div class="flowhead"><div class="vtitle">生产进度</div><div class="vtype">知识类 · 带B-roll</div></div>
+        <div class="line">
+          <div class="station done"><div class="dot">✓</div><div class="sname">想法</div></div>
+          <div class="station done"><div class="dot">✓</div><div class="sname">脚本</div></div>
+          <div class="station done"><div class="dot">✓</div><div class="sname">拍摄</div></div>
+          <div class="station working"><div class="dot">⚙️</div><div class="sname">剪辑</div></div>
+          <div class="station pending"><div class="dot">5</div><div class="sname">封面</div></div>
+          <div class="station pending"><div class="dot">6</div><div class="sname">文案</div></div>
+          <div class="station pending"><div class="dot">7</div><div class="sname">发布</div></div>
+        </div>
+        <div class="note">点任意工位 → 打开的就是左侧工具箱里同一个工具，只是输入自动接了上一步的产物。</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+function show(which) {
+  document.getElementById('tool').classList.toggle('hidden', which !== 'tool');
+  document.getElementById('flow').classList.toggle('hidden', which !== 'flow');
+  document.getElementById('nav-tool').classList.toggle('active', which === 'tool');
+  document.getElementById('nav-flow').classList.toggle('active', which === 'flow');
+}
+</script>
+</body>
+</html>

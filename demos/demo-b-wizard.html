@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案B · 向导式流水线</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif; background:#fff; color:#1a1d24; }
+  .topbar { border-bottom:1px solid #eef0f3; padding:14px 28px; display:flex; align-items:center; }
+  .logo { font-weight:800; font-size:18px; }
+  .logo span { color:#8b7cf6; }
+  .topbar .vname { margin-left:18px; color:#6b7280; font-size:14px; padding-left:18px; border-left:1px solid #e5e7eb; }
+  .steps { display:flex; justify-content:center; gap:0; padding:26px 40px 10px; max-width:860px; margin:0 auto; }
+  .step { flex:1; text-align:center; position:relative; }
+  .step:not(:last-child)::after { content:""; position:absolute; top:15px; right:-50%; width:100%; height:2px; background:#e5e7eb; }
+  .step.past:not(:last-child)::after { background:#8b7cf6; }
+  .sd { width:30px; height:30px; border-radius:50%; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; background:#fff; border:2px solid #e5e7eb; color:#b8bcc4; position:relative; z-index:1; }
+  .past .sd { background:#8b7cf6; border-color:#8b7cf6; color:#fff; }
+  .now .sd { border-color:#8b7cf6; color:#8b7cf6; box-shadow:0 0 0 4px #ede9fe; }
+  .sl { font-size:12.5px; color:#b8bcc4; font-weight:600; }
+  .past .sl, .now .sl { color:#1f2937; }
+  .main { max-width:760px; margin:30px auto; padding:0 24px; }
+  h1 { font-size:20px; margin-bottom:6px; }
+  .desc { color:#6b7280; font-size:14px; margin-bottom:22px; }
+  .compare { display:flex; gap:16px; }
+  .box { flex:1; border:1px solid #e8eaee; border-radius:12px; padding:16px; font-size:13.5px; line-height:1.9; color:#374151; }
+  .box h4 { font-size:12px; color:#9ca3af; font-weight:600; margin-bottom:10px; letter-spacing:.5px; }
+  .box.opt { border-color:#c7d2fe; background:#fbfaff; }
+  .hl { background:#ede9fe; border-radius:3px; padding:0 3px; }
+  .tunebar { margin-top:16px; border:1px dashed #d8dce3; border-radius:10px; padding:12px 16px; font-size:13px; color:#6b7280; display:flex; align-items:center; }
+  .tunebar b { color:#8b7cf6; font-weight:600; cursor:pointer; }
+  .actions { display:flex; gap:12px; margin-top:22px; }
+  .actions button { border:none; border-radius:10px; padding:12px 22px; font-size:14.5px; font-weight:600; cursor:pointer; }
+  .primary { background:#8b7cf6; color:#fff; }
+  .ghost { background:#f3f4f6; color:#4b5563; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">Creator <span>OS</span></div>
+    <div class="vname">当前视频：《Fable5 最后一天》 · 知识类</div>
+  </div>
+
+  <div class="steps">
+    <div class="step past"><div class="sd">✓</div><div class="sl">想法</div></div>
+    <div class="step now"><div class="sd">2</div><div class="sl">脚本</div></div>
+    <div class="step"><div class="sd">3</div><div class="sl">拍摄</div></div>
+    <div class="step"><div class="sd">4</div><div class="sl">剪辑</div></div>
+    <div class="step"><div class="sd">5</div><div class="sl">封面</div></div>
+    <div class="step"><div class="sd">6</div><div class="sl">文案</div></div>
+    <div class="step"><div class="sd">7</div><div class="sl">发布</div></div>
+  </div>
+
+  <div class="main">
+    <h1>第 2 步 · 脚本优化 <span style="font-size:13px;color:#f59e0b;">⚙️ 脚本Agent</span></h1>
+    <div class="desc">AI 已把你的口述整理成口播稿，左右对照，改到满意再放行。</div>
+    <div class="compare">
+      <div class="box">
+        <h4>你的口述原稿</h4>
+        今天是fable5最后一天嘛，我就想说一下这个模型我用下来的感受，其实我觉得它最厉害的地方是那个自动化的能力，我搭了一套工作流…
+      </div>
+      <div class="box opt">
+        <h4>优化稿（可直接编辑）</h4>
+        <span class="hl">今天之后，这个最强模型就要下线了。</span><br>
+        我花一周时间，<br>
+        用它搭了一套内容自动化流水线。<br>
+        今天讲讲它到底强在哪。<br>
+        …
+      </div>
+    </div>
+    <div class="tunebar">🎛 这个 Agent 不合口味？<b>&nbsp;调优提示词&nbsp;</b>（比如"钩子再狠一点""语气更平和"）</div>
+    <div class="actions">
+      <button class="ghost">↻ 重新生成</button>
+      <button class="primary">确认脚本，进入拍摄 →</button>
+    </div>
+  </div>
+</body>
+</html>
