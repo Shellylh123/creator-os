@@ -79,12 +79,40 @@ const ui = {
     render();
   },
 
-  async newProject() {
-    const title = prompt("视频标题（工作用名）：");
-    if (!title) return;
-    const type = confirm("这条是【知识类·带B-roll】吗？\n确定=知识类带B-roll　取消=纯口播") ? "knowledge" : "koubo";
-    await api("/api/projects", { method: "POST", body: JSON.stringify({ title, type }) });
-    await this.openProject(title, 0);
+  newProject() {
+    const mask = document.createElement("div");
+    mask.className = "modal-mask";
+    mask.innerHTML = `<div class="modal">
+      <h3>新建视频</h3>
+      <div class="fld"><label>视频标题（工作用名）</label><input id="npTitle" type="text" placeholder="比如：Fable5 最后一天"></div>
+      <div class="fld"><label>视频类型</label>
+        <div class="typegrid">
+          <div class="typecard sel" data-type="koubo"><b>纯口播</b><span>真人出镜讲述，走 ClipLab 剪辑（字幕/变速/画布）</span></div>
+          <div class="typecard" data-type="knowledge"><b>知识类 · 带 B-roll</b><span>讲解中自动配画面素材（截图/录屏/实景）</span></div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end;">
+        <button class="btn sm ghost" id="npCancel">取消</button>
+        <button class="btn sm" id="npCreate">创建</button>
+      </div>
+    </div>`;
+    document.body.appendChild(mask);
+    mask.querySelectorAll(".typecard").forEach((c) => c.addEventListener("click", () => {
+      mask.querySelectorAll(".typecard").forEach((x) => x.classList.remove("sel"));
+      c.classList.add("sel");
+    }));
+    const close = () => mask.remove();
+    mask.addEventListener("click", (e) => { if (e.target === mask) close(); });
+    mask.querySelector("#npCancel").addEventListener("click", close);
+    mask.querySelector("#npTitle").focus();
+    mask.querySelector("#npCreate").addEventListener("click", async () => {
+      const title = mask.querySelector("#npTitle").value.trim();
+      if (!title) return mask.querySelector("#npTitle").focus();
+      const type = mask.querySelector(".typecard.sel").dataset.type;
+      await api("/api/projects", { method: "POST", body: JSON.stringify({ title, type }) });
+      close();
+      await ui.openProject(title, 0);
+    });
   },
 };
 
