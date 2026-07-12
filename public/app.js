@@ -305,6 +305,8 @@ async function refreshCliplabLog() {
   const r = await api("/api/cliplab/log");
   const el = document.getElementById("cliplabLog");
   if (el) el.textContent = r.tail;
+  const m = (r.tail || "").match(/Review URL: (http\S+)/);
+  if (m) setStatus(`预处理完成 → <a href="${m[1]}" target="_blank" style="color:var(--lav);font-weight:500;">打开审核页</a>（勾删改字，然后执行剪辑出片）`);
 }
 
 function selectCand(img) {
@@ -475,6 +477,7 @@ async function prefillPublish(platform) {
   const pk = ctx.pack;
   if (!pk || !ctx.videoPath) return;
   const st = document.getElementById("pubstatus-" + platform);
+  if (!st) return;
   st.textContent = "正在拉起浏览器自动填充…";
   try {
     await api("/api/publish/prefill", { method: "POST", body: JSON.stringify({
@@ -496,6 +499,7 @@ async function prefillPublish(platform) {
 
 async function loginPublish(platform) {
   const st = document.getElementById("pubstatus-" + platform);
+  if (!st) return;
   st.textContent = "正在拉起登录浏览器，请用手机 App 扫码…";
   try {
     await api("/api/publish/login", { method: "POST", body: JSON.stringify({ platform }) });
@@ -509,6 +513,12 @@ function setStatus(html) {
   if (el) el.innerHTML = html;
 }
 
+// 写入可能已随视图切换消失的元素：找不到就静默跳过，不抛错
+function setHTML(sel, html) {
+  const el = $(sel);
+  if (el) el.innerHTML = html;
+}
+
 async function runScriptModule(projectId) {
   const idea = $("#ideaInput").value.trim();
   if (!idea) return setStatus('<span class="err">先输入想法再点优化</span>');
@@ -516,7 +526,7 @@ async function runScriptModule(projectId) {
   try {
     const r = await api("/api/module/script", { method: "POST", body: JSON.stringify({ idea, projectId }) });
     if (projectId) return ui.openProject(projectId, 1);
-    $("#scriptOut").innerHTML = `<div class="scriptbox"><b>《${esc(r.title)}》</b> · 预计 ${esc(r.duration_est)}s\n\n${esc(r.script)}\n\n拍摄提示：${esc(r.notes || "")}</div>`;
+    setHTML("#scriptOut", `<div class="scriptbox"><b>《${esc(r.title)}》</b> · 预计 ${esc(r.duration_est)}s\n\n${esc(r.script)}\n\n拍摄提示：${esc(r.notes || "")}</div>`);
     setStatus("");
   } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
 }
@@ -541,7 +551,7 @@ async function runBrollModule(projectId) {
   setStatus('<span class="spinner">剪辑 Agent 分析中…</span>');
   try {
     const r = await api("/api/module/broll", { method: "POST", body: JSON.stringify({ transcript, projectId }) });
-    $("#brollList").innerHTML = brollListHtml(r);
+    setHTML("#brollList", brollListHtml(r));
     setStatus("");
     if (projectId) state.currentProject.broll = r;
   } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
@@ -607,7 +617,7 @@ async function runCopypackModule(projectId) {
   try {
     const r = await api("/api/module/copypack", { method: "POST", body: JSON.stringify({ script, title: projectId || "", projectId }) });
     lastPack = r;
-    $("#packOut").innerHTML = packHtml(r, projectId);
+    setHTML("#packOut", packHtml(r, projectId));
     setStatus("");
     if (projectId) { state.currentProject.publish = r; renderProject(); }
   } catch (e) { setStatus(`<span class="err">${esc(e.message)}</span>`); }
