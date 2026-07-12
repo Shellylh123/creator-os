@@ -186,7 +186,7 @@ function renderEditStation(el, p) {
   const transcript = (p.footage || {}).transcript;
   const b = p.broll;
   const hasCands = b && (b.points || []).some((pt) => (pt.candidates || []).length);
-  const rendered = b && b.rendered_path;
+  const rendered = p.rendered || (b && b.rendered_path);
   el.innerHTML = `<div class="card">
     <h4 style="margin-bottom:10px;">④ 剪辑 — 知识类 · B-roll <span class="agentpill">剪辑 Agent</span></h4>
     ${transcript ? "" : `<div class="err">还没有转录稿，请先回③登记。</div>`}
@@ -205,7 +205,7 @@ function renderEditStation(el, p) {
 function renderedHtml(projectId) {
   return `<div style="margin-top:18px;">
     <h4 style="margin-bottom:10px;">合成结果</h4>
-    <video controls style="width:300px;border-radius:14px;background:#000;" src="/workspace/${encodeURIComponent(projectId)}/final_broll.mp4?t=${Date.now()}"></video>
+    <video controls style="width:300px;border-radius:14px;background:#000;" src="/workspace/${encodeURIComponent((state.currentProject.dirName || projectId).replace(/[^\w一-龥-]/g, "_"))}/final_broll.mp4?t=${Date.now()}"></video>
   </div>`;
 }
 

@@ -48,6 +48,8 @@ function loadProject(id) {
     script: readJsonIfExists(path.join(dir, "02_script.json")),
     footage: readJsonIfExists(path.join(dir, "03_footage.json")),
     broll: readJsonIfExists(path.join(dir, "04_broll.json")),
+    rendered: fs.existsSync(path.join(dir, "final_broll.mp4")),
+    dirName: path.basename(dir),
     cover: readJsonIfExists(path.join(dir, "05_cover.json")),
     publish: readJsonIfExists(path.join(dir, "06_publish.json")),
   };
