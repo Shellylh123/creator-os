@@ -39,6 +39,7 @@ const I18N = {
     editKoubo: "04 · Edit — Talking-head", cliplabEngine: "ClipLab Engine",
     cliplabDesc: "One click runs preprocessing (normalize + transcribe + AI sentence-split, ~5–8 min unattended). The log then links to a review page — tick/edit lines, and the final cut renders in one encode.",
     cliplabStart: "Start ClipLab preprocessing", cliplabRefresh: "Refresh progress",
+    finalCut: "Final cut preview",
     cliplabStarting: "Starting preprocessing…",
     cliplabStarted: "Started (background, sleep-proof). Click Refresh progress to see the log.",
     cliplabDone: (url) => `Preprocessing done → <a href="${url}" target="_blank" style="color:var(--lav);font-weight:500;">Open review page</a> (tick/edit lines, then render the cut)`,
@@ -139,6 +140,7 @@ const I18N = {
     editKoubo: "④ 剪辑 — 纯口播", cliplabEngine: "ClipLab 引擎",
     cliplabDesc: "一键启动预处理（画面归一化 + 语音转录 + AI 断句，约 5-8 分钟无人值守），完成后给出审核页链接，勾删改字后一次编码直出成片。",
     cliplabStart: "启动 ClipLab 预处理", cliplabRefresh: "刷新进度",
+    finalCut: "剪辑成片预览",
     cliplabStarting: "正在启动预处理…",
     cliplabStarted: "已启动（后台运行，防睡眠已开）。点「刷新进度」看日志。",
     cliplabDone: (url) => `预处理完成 → <a href="${url}" target="_blank" style="color:var(--lav);font-weight:500;">打开审核页</a>（勾删改字，然后执行剪辑出片）`,
@@ -479,6 +481,8 @@ function renderEditStation(el, p) {
         <span id="mstatus"></span>
       </div>
       <pre id="cliplabLog" class="t-xs t-faint" style="margin-top:12px;white-space:pre-wrap;max-height:200px;overflow:auto;"></pre>
+      ${(p.footage || {}).final_path ? `<div style="margin-top:14px;"><h4 style="margin-bottom:10px;">${T.finalCut}</h4>
+        <video controls style="width:300px;border-radius:14px;background:#000;" src="/api/video?path=${encodeURIComponent(p.footage.final_path)}"></video></div>` : ""}
       <div class="row"><button class="btn ghost" onclick="markEditDone('${esc(p.id)}')">${T.editDone}</button></div></div>`;
     return;
   }

@@ -209,6 +209,16 @@ app.post("/api/cliplab/final", (req, res) => {
   res.json({ found: true, path: candidates[0] });
 });
 
+// 本地视频流（白名单目录内），用于界面预览剪辑成片
+app.get("/api/video", (req, res) => {
+  const p = req.query.path || "";
+  const allowed = ["/Users/liuhan/Movies/ClipLab", WORKSPACE, "/Users/liuhan/Downloads"];
+  const real = path.resolve(p);
+  if (!allowed.some((root) => real.startsWith(root))) return res.status(403).json({ error: "路径不在允许范围" });
+  if (!fs.existsSync(real)) return res.status(404).json({ error: "文件不存在" });
+  res.sendFile(real);
+});
+
 app.get("/api/cliplab/log", (_req, res) => {
   try {
     const t = fs.readFileSync(path.join(LOGS, "cliplab_prep.log"), "utf8").split("\n");
